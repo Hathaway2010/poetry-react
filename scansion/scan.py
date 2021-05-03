@@ -60,14 +60,13 @@ def poem_stats(poem):
         poem_list.append(line_list)
     return poem_list
 
-
-def house_robber_scan(poem):
-    pass
-
 def original_scan(poem):
     pass
 
 def simple_scan(poem):
+    pass
+
+def house_robber_scan(poem):
     pass
 
 def record(poem, scansion):

@@ -110,4 +110,3 @@ def other_silent_e(word):
     if silent_final_ed_es.search(word) or consonant_e_ly.search(word):
         return True
     return False
-
