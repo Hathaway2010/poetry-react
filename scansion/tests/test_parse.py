@@ -152,5 +152,32 @@ class TestAdjustmentForTwoSyllClusters(TestCase):
     def test_consonant_y(self):
         self.assertEqual(adjustment_for_two_syll_clusters("mayor"), 1)
 
-    
-    
+class TestSilentFinalE(TestCase):
+    def test_silent_final_e(self):
+        self.assertFalse(silent_final_e("sabre"))
+        self.assertFalse(silent_final_e("battle"))
+        self.assertFalse(silent_final_e("undue"))
+        self.assertTrue(silent_final_e("vague"))
+        self.assertTrue(silent_final_e("mare"))
+
+class TestSilentFinalEdEs(TestCase):
+    def test_other_silent_e(self):
+        self.assertFalse(other_silent_e("aided"))
+        self.assertFalse(other_silent_e("parted"))
+        self.assertFalse(other_silent_e("mitred"))
+        self.assertFalse(other_silent_e("battled"))
+        self.assertFalse(other_silent_e("mitres"))
+        self.assertFalse(other_silent_e("ages"))
+        self.assertFalse(other_silent_e("battles"))
+        self.assertFalse(other_silent_e("hatches"))
+        self.assertTrue(other_silent_e("aped"))
+        self.assertTrue(other_silent_e("ached"))
+        self.assertTrue(other_silent_e("tabbed"))
+        self.assertTrue(other_silent_e("aides"))
+        self.assertTrue(other_silent_e("lathes"))
+        self.assertTrue(other_silent_e("paled"))
+        self.assertTrue(other_silent_e("pared"))
+        self.assertTrue(other_silent_e("pales"))
+        self.assertTrue(other_silent_e("pares"))
+        self.assertTrue(other_silent_e("barres"))
+        self.assertTrue(other_silent_e("awes"))
