@@ -1,5 +1,5 @@
 from django.test import TestCase
-from scansion.parse import clean, stress_patterns_most_popular_syllable_count, calculate_ratios, preliminary_syllable_count, adjustment_for_two_syll_clusters, silent_final_e, other_silent_e
+from scansion.parse import clean, syllable_counter, calculate_ratios, preliminary_syllable_count, adjustment_for_two_syll_clusters, silent_final_e, other_silent_e
 from scansion.models import Word, StressPattern
 
 class TestClean(TestCase):
@@ -12,7 +12,7 @@ class TestClean(TestCase):
     def test_e_accented(self):
         self.assertEqual(clean("belovéd"), "belovéd")
 
-class TestStressPatternsMostPopularSyllableCount(TestCase):
+class TestSyllableCounter(TestCase):
     @classmethod
     def setUpTestData(cls):
         Word.objects.create(word="wavering")
@@ -35,26 +35,35 @@ class TestStressPatternsMostPopularSyllableCount(TestCase):
 
     def test_single_object_popularity_one(self):
         s = StressPattern.objects.filter(word=Word.objects.get(word="wavering"))
-        self.assertEqual([s[0]], stress_patterns_most_popular_syllable_count(s))
+        self.assertEqual([s[0]], syllable_counter(s)[0])
+        self.assertEqual(1, syllable_counter(s)[1])
+        self.assertEqual(3, syllable_counter(s)[2])
 
     def test_single_object_popularity_many(self):
         s = StressPattern.objects.filter(word=Word.objects.get(word="an"))
-        self.assertEqual([s[0]], stress_patterns_most_popular_syllable_count(s))
+        self.assertEqual([s[0]], syllable_counter(s)[0])
+        self.assertEqual(11, syllable_counter(s)[1])
+        self.assertEqual(1, syllable_counter(s)[2])
 
     def test_two_objects_same_length(self):
         s = StressPattern.objects.filter(word=Word.objects.get(word="where"))
-        self.assertEqual([s[0], s[1]], stress_patterns_most_popular_syllable_count(s))
+        self.assertEqual([s[0], s[1]], syllable_counter(s)[0])
+        self.assertEqual(25, syllable_counter(s)[1])
+        self.assertEqual(1, syllable_counter(s)[2])
 
     def test_two_objects_diff_lengths(self):
         s = StressPattern.objects.filter(word=Word.objects.get(word="every"))
-        self.assertEqual([s[1]], stress_patterns_most_popular_syllable_count(s))
-
+        self.assertEqual([s[1]], syllable_counter(s)[0])
+        self.assertEqual(10, syllable_counter(s)[1])
+        self.assertEqual(2, syllable_counter(s)[2])
     def test_multiple_objects_no_winner(self):
         # if there is no winner in popularity between syllable counts,
         # favor those entered later, because old dictionary is likelier
         # to be wrong than humans
         s = StressPattern.objects.filter(word=Word.objects.get(word="squirrel"))
-        self.assertEqual([s[2], s[3], s[4]], stress_patterns_most_popular_syllable_count(s))
+        self.assertEqual([s[2], s[3], s[4]], syllable_counter(s)[0])
+        self.assertEqual(10, syllable_counter(s)[1])
+        self.assertEqual(2, syllable_counter(s)[2])
 
 class TestCalculateRatios(TestCase):
     @classmethod
@@ -74,22 +83,22 @@ class TestCalculateRatios(TestCase):
     
     def test_one_syllable_one_pattern(self):
         s = StressPattern.objects.filter(word=Word.objects.get(word="an"))
-        to_check = stress_patterns_most_popular_syllable_count(s)
+        to_check = syllable_counter(s)[0]
         self.assertEqual(calculate_ratios(to_check), [0.0833])
     
     def test_one_syllable_multiple_patterns(self):
         s = StressPattern.objects.filter(word=Word.objects.get(word="where"))
-        to_check = stress_patterns_most_popular_syllable_count(s)
+        to_check = syllable_counter(s)[0]
         self.assertEqual([1.2500], calculate_ratios(to_check))
     
     def test_multiple_syllables_one_pattern(self):
         s = StressPattern.objects.filter(word=Word.objects.get(word="wavering"))
-        to_check = stress_patterns_most_popular_syllable_count(s)
+        to_check = syllable_counter(s)[0]
         self.assertEqual([2.000, 0.5000, 0.5000], calculate_ratios(to_check))
 
     def test_multiple_syllables_multiple_patterns(self):
         s = StressPattern.objects.filter(word=Word.objects.get(word="squirrel"))
-        to_check = stress_patterns_most_popular_syllable_count(s)
+        to_check = syllable_counter(s)[0]
         self.assertEqual([0.5000, 0.7143], calculate_ratios(to_check))
 
 class TestPreliminarySyllableCount(TestCase):

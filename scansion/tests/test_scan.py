@@ -1,5 +1,5 @@
 from django.test import TestCase
-from scansion.scan import get_stats, poem_stats, original_scan, house_robber_scan, record, syllables
+from scansion.scan import get_stats, poem_stats, original_scan, house_robber_scan, simple_scan, record, syllables
 from scansion.models import Word, StressPattern
 
 
@@ -109,11 +109,12 @@ class TestStats(TestCase):
                      0.3987, " ", 5.0000, 0.2000, " ", 3.000, " "],
                     [0.5000, 2.0000, " "]]
         self.assertEqual(poem_stats(poem), scansion)
+        
     def test_line_with_unknown(self):
         line = "The moon is a wavering squirrel where one fish runs"
-        scansion = [[0.0105, " ", 14.8515, " ", 0.3258,  " ", 0.0067, " ",
-                     2.0000, 0.1000, 0.1000, " ", "?", "?", " ", 1.2716, " ",
-                     0.2665, " ", 0.4975, " ", "?", " "]]
+        scansion = [[0.0131, " ", 8.0000, " ", 0.3333,  " ", 0.0133, " ",
+                     2.0000, 0.5000, 0.5000, " ", "?", "?", " ", 1.2500, " ",
+                     0.3125, " ", 0.6667, " ", "?", " "]]
         self.assertEqual(poem_stats(line), scansion)
 
     def test_original_unambiguous(self):
@@ -175,114 +176,77 @@ class TestStats(TestCase):
     def test_house_robber_stressed_unknown(self):
         self.assertEqual(house_robber_scan("moon bird"), "/ u ")
 
+    def test_simple_unambiguous(self):
+        self.assertEqual(simple_scan("water moon"), "/u / ")
+
+    def test_simple_punctuation_capitalization(self):
+        self.assertEqual(simple_scan("Wa'ter, moon."),
+                         simple_scan("water moon"))
+    
+    def test_simple_scan_equal(self):
+        self.assertEqual(simple_scan("is is"), "u u ")
+
+    def test_simple_scan_unknown(self):
+        self.assertEqual(simple_scan("squirrel"), "?? ")
+
     def test_record_unknown(self):
         record("cat", "/")
-        try:
-            w = StressPattern.objects.filter(word=Word.objects.get(word="cat"))
-        except:
-            self.fail("Word 'cat' not found")
-        self.assertEqual(len(w), 1)
-        self.assertEqual((w[0].stresses, w[0].popularity), ("/", 1))
-
+        w = Word.objects.filter(word="cat")
+        self.assertEqual(w.count(), 1)
+        self.assertEqual(w[0].popularity, 1)
+        self.assertEqual(w[0].syllables, 1)
+        s = StressPattern.objects.filter(word=w[0])
+        self.assertEqual(s.count(), 1)
+        self.assertEqual(s[0].stresses, "/")
+        self.assertEqual(s[0].popularity, 1)
+        
     def test_record_known(self):
         record("moon", "/")
-        w = StressPattern.objects.filter(word=Word.objects.get(word="moon")).order_by("-popularity")
-        self.assertEqual(len(w), 2)
-        self.assertEqual((w[0].stresses, w[0].popularity), ("/", 16))
-        self.assertEqual((w[1].stresses, w[1].popularity), ("u", 1))
+        w = Word.objects.filter(word="moon")
+        self.assertEqual(w.count(), 1)
+        self.assertEqual(w[0].popularity, 0)
+        s = StressPattern.objects.filter(word=w[0]).order_by("-popularity")
+        self.assertEqual(s.count(), 2)
+        self.assertEqual((s[0].stresses, s[0].popularity), ("/", 16))
+        self.assertEqual((s[1].stresses, s[1].popularity), ("u", 1))
 
     def test_capitalization_punctuation(self):
         record("Mo'on", "/")
-        w = StressPattern.objects.filter(word=Word.objects.get(word="moon")).order_by("-popularity")
-        self.assertEqual(w[0].popularity, 16)
+        w = Word.objects.filter(word="moon")
+        self.assertEqual(w.count(), 1)
+        self.assertEqual(w[0].popularity, 0)
+        s = StressPattern.objects.filter(word=w[0]).order_by("-popularity")
+        self.assertEqual(s[0].popularity, 16)
 
     def test_record_new_pron(self):
         record("wavering", "/u/")
-        w = StressPattern.objects.filter(word=Word.objects.get(word="wavering"))
-        self.assertEqual(w.count(), 2)
-        self.assertEqual((w[0].stresses, w[0].popularity,
-                          w[1].stresses, w[1].popularity),
+        w = Word.objects.filter(word="wavering")
+        self.assertEqual(w.count(), 1)
+        self.assertEqual(w[0].popularity, 0)
+        s = StressPattern.objects.filter(word=w[0])
+        self.assertEqual(s.count(), 2)
+        self.assertEqual((s[0].stresses, s[0].popularity,
+                          s[1].stresses, s[1].popularity),
                          ("/uu", 1, "/u/", 1))
 
-    def test_simple_syll(self):
+class TestSyllable(TestCase):
+    # see test_parse for more detailed tests
+    def test_simple(self):
         self.assertEqual(syllables("squirrel"), 2)
-
-    def test_vowel_split_diacritical(self):
-        self.assertEqual(syllables("plié"), 2)
-        self.assertEqual(syllables("neé"), 1)
-
-    def test_vowel_split_ao(self):
-        self.assertEqual(syllables("chaos"), 2)
-
-    def test_vowel_split_eo(self):
-        self.assertEqual(syllables("eon"), 2)
-        self.assertEqual(syllables("righteous"), 2)
-
-    def test_vowel_split_ia(self):
-        self.assertEqual(syllables("diacritical"), 5)
-        self.assertEqual(syllables("egalitarian"), 6)
-        self.assertEqual(syllables("electrician"), 4)
-        self.assertEqual(syllables("fustian"), 2)
-
-    def test_vowel_split_ie(self):
-        self.assertEqual(syllables("tries"), 1)
-        self.assertEqual(syllables("quiet"), 2)
-
-    def test_vowel_split_io(self):
-        self.assertEqual(syllables("viol"), 2)
-        self.assertEqual(syllables("perdition"), 3)
-        self.assertEqual(syllables("suspicious"), 3)
-
-    def test_vowel_split_iu(self):
-        self.assertEqual(syllables("sodium"), 3)
-        self.assertEqual(syllables("Lucius"), 2)
-
-    def test_vowel_split_ua(self):
-        self.assertEqual(syllables("duality"), 4)
-        self.assertEqual(syllables("quality"), 3)
-        self.assertEqual(syllables("Guam"), 1)
-
-    def test_vowel_split_ue(self):
-        self.assertEqual(syllables("quell"), 1)
-        self.assertEqual(syllables("suet"), 2)
-        self.assertEqual(syllables("cruel"), 2)
-        self.assertEqual(syllables("due"), 1)
-
-    def test_vowel_split_uo(self):
-        self.assertEqual(syllables("duo"), 2)
-        self.assertEqual(syllables("quote"), 1)
-
-    def test_vowel_split_vowel_ing(self):
-        self.assertEqual(syllables("crying"), 2)
-        self.assertEqual(syllables("seeing"), 2)
-
-    def test_vowel_split_consonant_y(self):
-        self.assertEqual(syllables("mayor"), 2)
+    
+    def test_two_syll_cluster(self):
+        self.assertEqual(syllables("diana"), 3)
 
     def test_silent_final_e(self):
-        self.assertEqual(syllables("sabre"), 2)
-        self.assertEqual(syllables("battle"), 2)
-        self.assertEqual(syllables("undue"), 2)
-        self.assertEqual(syllables("vague"), 1)
-        self.assertEqual(syllables("mare"), 1)
+        self.assertEqual(syllables("make"), 1)
 
-    def test_silent_final_ed_es(self):
-        self.assertEqual(syllables("aided"), 2)
-        self.assertEqual(syllables("parted"), 2)
-        self.assertEqual(syllables("mitred"), 2)
-        self.assertEqual(syllables("battled"), 2)
-        self.assertEqual(syllables("aped"), 1)
-        self.assertEqual(syllables("ached"), 1)
-        self.assertEqual(syllables("tabbed"), 1)
-        self.assertEqual(syllables("aides"), 1)
-        self.assertEqual(syllables("mitres"), 2)
-        self.assertEqual(syllables("ages"), 2)
-        self.assertEqual(syllables("battles"), 2)
-        self.assertEqual(syllables("hatches"), 2)
-        self.assertEqual(syllables("lathes"), 1)
-        self.assertEqual(syllables("paled"), 1)
-        self.assertEqual(syllables("pared"), 1)
-        self.assertEqual(syllables("pales"), 1)
-        self.assertEqual(syllables("pares"), 1)
-        self.assertEqual(syllables("barres"), 1)
-        self.assertEqual(syllables("awes"), 1)
+    def test_other_silent_e(self):
+        self.assertEqual(syllables("lonely"), 2)
+
+    def test_would_be_zero(self):
+        self.assertEqual(syllables("the"), 1)
+
+    def test_combine(self):
+        # add more of these as they come up
+        self.assertEqual(syllables("violate"), 3)
+        

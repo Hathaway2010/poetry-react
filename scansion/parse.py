@@ -14,18 +14,24 @@ def clean(word):
     w = re.sub(DISALLOWED, "", word)
     return w.lower()
 
-def stress_patterns_most_popular_syllable_count(stress_pattern_queryset):
-    """Offer all stress patterns with most popular syllable count
-    
+def syllable_counter(stress_pattern_queryset):
+    """Find StressPatterns with most popular syllable count
+
     Parameters
     ----------
     stress_pattern_queryset : Django queryset
         queryset of StressPattern objects for a given word
-    
+
     Returns
     -------
     stress_pattern_list : list
-        all StressPatterns with most popular syllable count
+        list of StressPattern objects with most popular syllable count
+
+    max_popularity : int
+        popularity of most popular syllable count
+
+    most_popular_count : int
+        most popular syllable count
     """
     count_dict = {}
     max_popularity = 0
@@ -43,8 +49,8 @@ def stress_patterns_most_popular_syllable_count(stress_pattern_queryset):
                 most_popular_count = count
     
     stress_pattern_list = count_dict[most_popular_count][0]
-    return stress_pattern_list
-
+    return stress_pattern_list, max_popularity, most_popular_count
+    
 def calculate_ratios(stress_pattern_list):
     """Find ratio stressed / unstressed for each syllable in word
     
@@ -72,7 +78,6 @@ def calculate_ratios(stress_pattern_list):
                 stressed += pattern.popularity
             elif pattern.stresses[i] == UNSTRESSED:
                 unstressed += pattern.popularity
-        print(stressed / unstressed)
         value_list.append(round(stressed / unstressed, 4))
     return value_list
 
