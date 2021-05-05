@@ -1,3 +1,19 @@
+"""MODULE SCAN
+===============
+This module scans poems and records users' scansions.
+
+Functions
+---------
+
+get_stats(word, confidence=False) : Return ratio to calculate scansion.
+poem_stats(poem) : Use get_stats on whole poem and return nested list.
+original_scan(poem) : Scan by comparing each ratio to the next.
+house_robber_scan(poem) : Scan with solution to house robber problem
+simple_scan(poem) : Scan based on ratios with no comparisons.
+record(poem, scansion) : Record new user scansions in database.
+syllables(word) : Guess syllable count of word not in database.
+"""
+
 from copy import copy
 
 from . import parse
@@ -48,7 +64,8 @@ def poem_stats(poem):
         list of lists of stress ratios
     """
     # split poem into lines
-    lines = parse.NEWLINE.split(poem)
+    cleaned_poem = parse.clean_poem(poem)
+    lines = parse.NEWLINE.split(cleaned_poem)
     poem_list = []
     # for each line get the list of stress probabilities (stressed / unstressed)
     # for each word and extend stress list with that sublist; for spaces, append a space
@@ -281,17 +298,21 @@ def syllables(word):
     --------
     tests/test_scan.py to clarify regular expressions
     """   
-    w = parse.clean(word)
-    # get preliminary count by counting vowels or clusters thereof
-    count = parse.preliminary_syllable_count(w)
-    # increment count for all vowel clusters likely to be 2 syllables
-    count += parse.adjustment_for_two_syll_clusters(w)
-    # subtract 1 for every likely silent e
-    if parse.silent_final_e(w):
-        count -= 1
-    if parse.other_silent_e(w):
-        count -= 1
-        # words have at least one syllable
-    if count <= 0:
-        count = 1
-    return count
+    cleaned_word = parse.clean(word)
+    compound = cleaned_word.split("-")
+    total_count = 0
+    for w in compound:
+        # get preliminary count by counting vowels or clusters thereof
+        count = parse.preliminary_syllable_count(w)
+        # increment count for all vowel clusters likely to be 2 syllables
+        count += parse.adjustment_for_two_syll_clusters(w)
+        # subtract 1 for every likely silent e
+        if parse.silent_final_e(w):
+            count -= 1
+        if parse.other_silent_e(w):
+            count -= 1
+            # words have at least one syllable
+        if count <= 0:
+            count = 1
+        total_count += count
+    return total_count

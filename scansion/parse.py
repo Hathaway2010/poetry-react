@@ -1,13 +1,36 @@
+"""MODULE PARSE
+   ============
+   This module contains helper functions for scan.py and other files.
+
+   Functions
+   ---------
+   clean_poem(poem) : Return poem with dashes replaced by spaces
+   clean(word) : Return word processed for lookup
+   syllable_counter(stress_pattern_queryset) : Find popular syll counts
+   calculate_ratios(word) : Find stressed / unstressed for syllables
+   preliminary_syllable_count(word): Count vowel clusters
+   adjustment_for_two_syll_clusters(word): Count 2-syll vowel clusters
+   silent_final_e: Return True if silent final e, False otherwise
+   other_silent_e: Return True if other silent e, False otherwise
+   """
+
 import re
 
-# regexes to reuse
+# regexes to reuse in other modules
 NEWLINE = re.compile("\r\n|\n|\r")
-DISALLOWED = re.compile("[^A-Za-zé]")
+DISALLOWED = re.compile("[^-A-Za-zé]")
+DASH = re.compile(" *-- *| *– *| *— *")
+SLASH = re.compile(" */ *")
 
 # scansion symbols 
 UNKNOWN = "?"
 UNSTRESSED = "u"
 STRESSED = "/"
+
+def clean_poem(poem):
+    dashless = re.sub(DASH, " ", poem)
+    dashless_slashless = re.sub(SLASH, " ", dashless)
+    return dashless_slashless
 
 def clean(word):
     """Return word lowercase and without nonalphabetic characters"""

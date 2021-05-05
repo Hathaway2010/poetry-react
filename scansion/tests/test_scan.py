@@ -26,7 +26,7 @@ class TestStats(TestCase):
         Word.objects.create(word="anchoring")
         Word.objects.create(word="many")
         Word.objects.create(word="ships")
-        Word.objects.create(word="homebound")
+        Word.objects.create(word="home-bound")
         Word.objects.create(word="every")
 
         StressPattern.objects.create(word=Word.objects.get(word="the"), stresses="u", popularity=381)
@@ -62,7 +62,7 @@ class TestStats(TestCase):
         StressPattern.objects.create(word=Word.objects.get(word="anchoring"), stresses="/u/", popularity=1)
         StressPattern.objects.create(word=Word.objects.get(word="many"), stresses="/u", popularity=4)
         StressPattern.objects.create(word=Word.objects.get(word="ships"), stresses="/", popularity=2)
-        StressPattern.objects.create(word=Word.objects.get(word="homebound"), stresses="u/", popularity=1)
+        StressPattern.objects.create(word=Word.objects.get(word="home-bound"), stresses="u/", popularity=1)
         StressPattern.objects.create(word=Word.objects.get(word="every"), stresses="/uu", popularity=1)
         StressPattern.objects.create(word=Word.objects.get(word="every"), stresses="/u", popularity=10)
 
@@ -74,7 +74,7 @@ class TestStats(TestCase):
         self.assertEqual(get_stats("sound;"), get_stats("sound"))
 
     def test_punctuation_capitalization(self):
-        self.assertEqual(get_stats("Home-bound"), get_stats("homebound"))
+        self.assertEqual(get_stats("Home-bound"), get_stats("home-bound"))
 
     def test_unknown(self):
         self.assertEqual(get_stats("squirrel"), ["?", "?"])
@@ -109,7 +109,18 @@ class TestStats(TestCase):
                      0.3987, " ", 5.0000, 0.2000, " ", 3.000, " "],
                     [0.5000, 2.0000, " "]]
         self.assertEqual(poem_stats(poem), scansion)
-        
+    
+    def test_poem_stats_dashes(self):
+        poem1 = """THE moon--is -- a wavering rim where one fish slips,
+                The water makes a quietness of–sound;
+                Night is/an anchoring—of many ships
+                Home-bound."""
+        poem2 = """THE moon is a wavering rim where one fish slips,
+                The water makes a quietness of sound;
+                Night is an anchoring of many ships
+                Home-bound."""
+        self.assertEqual(poem_stats(poem1), poem_stats(poem2))
+
     def test_line_with_unknown(self):
         line = "The moon is a wavering squirrel where one fish runs"
         scansion = [[0.0131, " ", 8.0000, " ", 0.3333,  " ", 0.0133, " ",
