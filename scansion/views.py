@@ -62,7 +62,7 @@ u u /u u /u
     else:
         # get chosen poem or random poem
         if id:
-            poem = Poem.objects.get(id=id)
+            poem = Poem.objects.get(pk=id)
         elif request.user.is_authenticated and request.user.is_promoted():
             poem = get_random_poem()
         else:

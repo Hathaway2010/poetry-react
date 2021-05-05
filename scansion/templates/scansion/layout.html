@@ -30,10 +30,10 @@
                 <a href="{% url 'choose_poem' %}">Choose a Poem</a>
                 {% if user.is_authenticated %}
                     <span>Logged in as {{ user.username }}</span>
-                    {% if not user.promoted %}
-                        <span>Score: <span id="score">{{ user.points }}</span>/10</span>
+                    {% if not user.is_promoted %}
+                        <span>Score: <span id="score">{{ user.score }}</span>/10</span>
                     {% endif %}
-                    <span id="promoted">Promoted: {{ user.promoted }}</span>
+                    <span id="promoted">Promoted: {{ user.is_promoted }}</span>
                     <a id="logout" href="{% url 'logout' %}">Logout</a>
                 {% else %}
                     <a id="login_link" href="{% url 'login' %}">Login</a>

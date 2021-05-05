@@ -76,7 +76,7 @@ class Poet(models.Model):
 
 class Poem(models.Model):
     title = models.TextField(blank=True)
-    poet = models.ForeignKey(Poet, on_delete=models.SET_NULL, null=True, blank=True)
+    poet = models.ForeignKey(Poet, on_delete=models.SET_NULL, blank=True, null=True)
     scansion = models.TextField(blank=True)
     poem = models.TextField()
     

@@ -244,6 +244,34 @@ def simple_scan(poem):
         poem_scansion.append(line_scansion)
     return "\n".join(poem_scansion)
 
+def simple_scan_augmented(poem):
+    """Scan poem using ratios but not comparing them
+    
+    Parameters
+    ----------
+    poem : str
+        poem to scan
+    
+    Returns
+    -------
+    scansion : str
+        scansion with lines separated by newlines, words by spaces
+    """
+    stats = poem_stats(poem)
+    poem_scansion = []
+    for line in stats:
+        line_scansion = ""
+        if line:
+            for value in line:
+                if value in [" ", "?"]:
+                    line_scansion += value
+                elif value > 1:
+                    line_scansion += "/"
+                else:
+                    line_scansion += "u"
+        poem_scansion.append(line_scansion)
+    return "\n".join(poem_scansion)
+
 def record(poem, scansion):
     """Record user scansions of individual words in database
     
