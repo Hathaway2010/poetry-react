@@ -75,7 +75,7 @@ u u /u u /u
             try:
                 s = MachineScansion.objects.get(poem=poem, algorithm=algorithm)
                 scansions.append(s)
-            except:
+            except MachineScansion.DoesNotExist:
                 new_scan = ALGORITHMS[algorithm.name](poem.poem)
                 s = MachineScansion(poem=poem, algorithm=algorithm)
                 s.save()
@@ -147,4 +147,19 @@ def choose_poem(request):
     computer_list = Poem.objects.filter(scansion="").order_by("poet")
     return render(request, "scansion/choose_poem.html", {"human_list": human_list, "computer_list": computer_list})
 
-
+def rescan_poem(request, id):
+    poem = Poem.objects.get(pk=id)
+    algorithms = Algorithm.objects.all()
+    scansions = []
+    for algorithm in algorithms:
+        new_scan = ALGORITHMS[algorithm.name](poem.poem)
+        try:
+            s = MachineScansion.objects.get(poem=poem, algorithm=algorithm)
+            s.scasion = new_scan
+            s.save()
+            scansions.append(s)
+        except MachineScansion.DoesNotExist:
+            s = MachineScansion(poem=poem, algorithm=algorithm)
+            s.save()
+            scansions.append(s)
+    return render(request, "scansion/index.html", {"poem": poem, "algorithms": algorithms, "scansions": scansions})

@@ -32,13 +32,9 @@ def get_stats(word):
     values : list of floats
         stress ratio for each syllable of the word; 4 decimal places
         `?` if unknown
-    """
-    # get version of word without non-alphabetic characters and lowercase
-    w = parse.clean(word)
-    print(w)
-    
+    """    
     try:
-        word_instance = Word.objects.get(word=w)
+        word_instance = Word.objects.get(word=word)
         s = StressPattern.objects.filter(word=word_instance)
         if s.exists():
             stresses = parse.syllable_counter(s)[0]
@@ -46,9 +42,9 @@ def get_stats(word):
         elif word_instance.syllables:
             return ["?" for i in range(word_instance.syllables)]
         else:
-            return ["?" for i in range(syllables(w))]           
+            return ["?" for i in range(syllables(word))]           
     except Word.DoesNotExist:
-        return ["?" for i in range(syllables(w))]
+        return ["?" for i in range(syllables(word))]
 
 def poem_stats(poem):
     """Find stress ratio for each word in a poem.
@@ -73,9 +69,12 @@ def poem_stats(poem):
         words = line.split()
         line_list = []
         for word in words:
-            stress = get_stats(word)
-            line_list.extend(stress)
-            line_list.append(" ")
+            # get version of word without non-alphabetic characters and lowercase
+            w = parse.clean(word)
+            if w:
+                stress = get_stats(w)
+                line_list.extend(stress)
+                line_list.append(" ")
         poem_list.append(line_list)
     return poem_list
 

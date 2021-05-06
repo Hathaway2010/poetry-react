@@ -4,23 +4,10 @@
 <html lang="en">
     <head>
         <title>{% block title %}Scansion{% endblock %}</title>
-        <link rel="stylesheet" href="{% static 'scansion/styles.css' %}">
         <!-- https://stackoverflow.com/questions/13002731/responsive-design-media-query-not-working-on-iphone -->
         <meta name="viewport" content="initial-scale=1">
         <link rel="preconnect" href="https://fonts.gstatic.com">
         <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English&display=swap" rel="stylesheet">
-        {% block script %}
-            <script>
-                document.addEventListener('DOMContentLoaded', () => {
-                    document.querySelector('#go').addEventListener('click', () => {
-                      const url = document.querySelector('#go-to-page').value
-                      if (url != 'none') {
-                              window.location = url;
-                      }
-                    })
-               })
-            </script>
-        {% endblock %}
     </head>
     <body>
         <nav>
@@ -62,5 +49,17 @@
             {% block body %}
             {% endblock %}
         </div>
+        {% block script %}
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    document.querySelector('#go').addEventListener('click', () => {
+                      const url = document.querySelector('#go-to-page').value
+                      if (url != 'none') {
+                              window.location = url;
+                      }
+                    })
+               })
+            </script>
+        {% endblock %}
     </body>
 </html>
