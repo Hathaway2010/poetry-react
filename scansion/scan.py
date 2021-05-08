@@ -15,7 +15,7 @@ syllables(word) : Guess syllable count of word not in database.
 """
 
 from copy import copy
-
+from collections import Counter
 from . import parse
 from .models import Word, StressPattern
 
@@ -270,6 +270,42 @@ def simple_scan_augmented(poem):
                     line_scansion += "u"
         poem_scansion.append(line_scansion)
     return "\n".join(poem_scansion)
+def reconcile(authoritative, scansion_queryset, diffs):
+    """Reconcile new human scansion with others
+    
+    Parameters
+    ----------
+    authoritative: str
+        poem's authoritative scansion as string
+    scansion_queryset: Django queryset
+        other human scansion objects for that poem, incl new scansion
+    
+    Returns
+    -------
+    authoritative: str
+        reconciliation between old and new scansions"""
+    # if there's only one previous human scansion
+    # differences will be ties; decide in favor of new;
+    # if scansion and authoritative are identical,
+    # (i.e. no diffs) return scansion
+    if scansion_queryset.count() <= 2 or not diffs:
+        return authoritative
+    else:
+        old_s_dicts = [parse.make_dict(hs.scansion) for hs in scansion_queryset]
+        auth_s_dict = parse.make_dict(authoritative)
+        for diff in diffs:
+            print(f"diff line {diff[0]} word {diff[1]}")
+            line_number = int(diff[0])
+            word_number = int(diff[1])
+            variants = [scan_dict[line_number][word_number] for scan_dict in old_s_dicts]
+            # https://stackoverflow.com/questions/23033625/sorting-counter-collection-in-python-with-secondary-term-tie-breaker
+            c = sorted(Counter(variants).most_common(), key = lambda x: (-x[1], variants[::-1].index(x[0])))
+            auth_s_dict[line_number][word_number] = c[0][0]
+        return parse.make_string(auth_s_dict)
+
+
+
+            
 
 def record(poem, scansion):
     """Record user scansions of individual words in database
@@ -279,7 +315,7 @@ def record(poem, scansion):
     poem : str
         poem that was scanned
     scansion : str
-        scansion as string separated with spaces and newlines
+        scansion, words separated with spaces, lines with newlines
     """
     # split both poem and scansion on spaces
     words = poem.split()

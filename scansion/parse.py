@@ -6,6 +6,9 @@
    ---------
    clean_poem(poem) : Return poem with dashes replaced by spaces
    clean(word) : Return word processed for lookup
+   make_dict(scansion): Turn string scansion into dictionary
+   make_dict_p(poem): Turn string poem into dictionary
+   make_string(scansion): Turn dict scansion into string
    syllable_counter(stress_pattern_queryset) : Find popular syll counts
    calculate_ratios(word) : Find stressed / unstressed for syllables
    preliminary_syllable_count(word): Count vowel clusters
@@ -28,6 +31,7 @@ UNSTRESSED = "u"
 STRESSED = "/"
 
 def clean_poem(poem):
+    """Return poem replacing dashes and slashes with spaces"""
     dashless = re.sub(DASH, " ", poem)
     dashless_slashless = re.sub(SLASH, " ", dashless)
     return dashless_slashless
@@ -36,6 +40,37 @@ def clean(word):
     """Return word lowercase and without nonalphabetic characters"""
     w = re.sub(DISALLOWED, "", word)
     return w.lower()
+
+def make_dict(scansion):
+        """Make dict id-ing scansion's words by line, word index"""
+        if not scansion:
+            return ""
+        else:
+            line_word_dict = {}
+            for i, line in enumerate(scansion.splitlines()):
+                line_word_dict[i] = {}
+                for j, word in enumerate(line.split()):
+                    line_word_dict[i][j] = word
+            return line_word_dict
+    
+def make_dict_p(poem):
+    """make dict id-ing poem's words by line, word index"""
+    p = clean_poem(poem)
+    line_word_dict = {}
+    for i, line in enumerate(poem.splitlines()):
+        line_word_dict[i] = {}
+        relevant_words = [word for word in line.split() if clean(word)]
+        for j, word in enumerate(relevant_words):
+            line_word_dict[i][j] = word
+    return line_word_dict
+
+def make_string(scansion_dict):
+    s = ""
+    for line in scansion_dict:
+        for word in scansion_dict[line]:
+            s = s + scansion_dict[line][word] + " "
+        s += "\n"
+    return s
 
 def syllable_counter(stress_pattern_queryset):
     """Find StressPatterns with most popular syllable count

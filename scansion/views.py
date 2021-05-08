@@ -1,5 +1,5 @@
 from django.shortcuts import HttpResponseRedirect, render
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.urls import reverse
 # https://www.kite.com/python/docs/django.contrib.admindocs.views.staff_member_required
 from django.contrib.admin.views.decorators import staff_member_required
@@ -56,36 +56,44 @@ u u /u u /u
                         poet=Poet.objects.get(last_name="SHAKESPEARE"))
             p.save()
             return p
-    def make_dict(scansion):
-        """Make dictionary id-ing poem's words by line, word index"""
-        if not scansion:
-            return ""
-        else:
-            line_word_dict = {}
-            for i, line in enumerate(scansion.splitlines()):
-                line_word_dict[i] = {}
-                for j, word in enumerate(line.split()):
-                    line_word_dict[i][j] = word
-            print(line_word_dict)
-            return line_word_dict
     
-    def make_dict_p(poem):
-        p = parse.clean_poem(poem)
-        line_word_dict = {}
-        for i, line in enumerate(poem.splitlines()):
-            line_word_dict[i] = {}
-            relevant_words = [word for word in line.split() if parse.clean(word)]
-            for j, word in enumerate(relevant_words):
-                line_word_dict[i][j] = word
-        print(line_word_dict)
-        return line_word_dict
-
-
-
     if request.method == "POST":
         pass
     elif request.method == "PUT":
-        pass
+        data = json.loads(request.body)
+        # if the user has proven themselves, write their scansion to the database
+        if request.user.is_authenticated and request.user.is_promoted():
+            # update poem's scansion in the poem table and mark it human-scanned
+            s = parse.make_string(data["scansion"])
+            p = Poem.objects.get(pk=data["id"])
+            hs = HumanScansion(poem=p, scansion=s, user=request.user)
+            hs.save()
+            if p.scansion:
+                h = HumanScansion.objects.filter(poem=p)
+                p.scansion = scan.reconcile(p.scansion, h, data["diffs"])
+                p.save()
+            else:
+                p.scansion = s
+                p.save
+            
+            
+            p.human_scanned = True
+            p.save()
+            # use record function from scan.py to update popularities of word scansions
+            # in Pronunciation instances
+            scan.record(p.poem, s)
+            return HttpResponse()
+
+        # otherwise, score the user
+        elif request.user.is_authenticated:
+            u = request.user
+            u.score += int(data["score"])
+            u.save()
+            # promote the user if their score has reached 10 points
+            resp_data = {"score": u.score, "promoted": u.is_promoted()}
+            return JsonResponse(resp_data)
+        else:
+            return HttpResponse()
     else:
         # get chosen poem or random poem
         if id:
@@ -104,7 +112,7 @@ u u /u u /u
         blank_slate = almost_blank_slate.replace(parse.UNKNOWN, parse.UNSTRESSED)
         scansions = {"Blank Slate" : {
             "about-algorithm": "",
-            "scansion": make_dict(blank_slate)
+            "scansion": parse.make_dict(blank_slate)
           }
         }
 
@@ -117,15 +125,16 @@ u u /u u /u
                 s.save()
             scansions[algorithm.name] = {
                     "about-algorithm": algorithm.about, 
-                    "scansion": make_dict(s.scansion)
+                    "scansion": parse.make_dict(s.scansion)
             }
                 
         ctxt = {
             "poem": {
+                "id": poem.pk,
                 "title" : poem.title,
                 "poem": poem.poem,
-                "poem_dict": make_dict_p(poem.poem),
-                "authoritative": make_dict(poem.scansion),
+                "poem_dict": parse.make_dict_p(poem.poem),
+                "authoritative": parse.make_dict(poem.scansion),
                 "poet": poem.poet.last_name
             }, 
             "scansions": scansions

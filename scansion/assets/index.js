@@ -209,20 +209,20 @@ class Scansion extends React.Component {
   handleSubmit() {
     function compareScansion(authoritative, submitted) {
       let wordCount = 0;
-      let diffCounter = 0;
+      const diffList = []
       for (let line in submitted) {
         if (line) {
           for (let word in submitted[line]) {
             let agrees = submitted[line][word] === authoritative[line][word];
             changeColors(line, word, agrees);
             if (!agrees) {
-              diffCounter++;
+              diffList.push([line, word])
             }
             wordCount++;
           }
         }
       }
-      return Math.round(diffCounter * 100 / wordCount);
+      return [diffList, Math.round(diffList.length * 100 / wordCount)];
     }
 
     function scoreScansion(percentage) {
@@ -241,15 +241,14 @@ class Scansion extends React.Component {
         alert(`New stresses will be recorded, but this will take a moment; disagreements between you and previous scansion (${percentage}% of words) will be marked in red, agreements in green.`);
       } else if (userIsAuthenticated && !submitted) {
         alert(`You have ${SCORES[score.toString()]} a point! Look at the poem to see where your scansion differed (${percentage}% of words) from the most recent authoritative scansion.`);
-      } else if (userIsAuthenticated) {
-        alert(`You just submitted this poem, so your score won't change, but look at the poem to see where your scansion differed (${percentage}% of words) from the most recent authoritative scansion.`);
+      } else if (userIsAuthenticated || submitted) {
+        alert(`You just submitted this poem, so your score won't/wouldn't change, but look at the poem to see where your scansion differed (${percentage}% of words) from the most recent authoritative scansion.`);
       } else {
         alert(`If you were logged in, you would have ${SCORES[score.toString()]} a point. Look at the poem to see where your scansion differed (${percentage}% of words) from the most recent authoritative scansion.`);
       }
     }
     
     function changeColors(lineNumber, wordNumber, agrees) {
-      console.log(`${lineNumber}-${wordNumber}: ${agrees}`);
       const PALERED = '#ffcccc'
       const PALEGREEN = '#99ffbb'
       const id = `scansion${lineNumber}-${wordNumber}`
@@ -263,7 +262,7 @@ class Scansion extends React.Component {
 
     function isAuthenticated() {
       const loginElem = document.querySelector('#login_link');
-      return loginElem == false;
+      return (!loginElem);
     }
 
     function isPromoted() {
@@ -271,34 +270,61 @@ class Scansion extends React.Component {
       return promElem && promElem.textContent === 'Promoted: True'
    }
 
-    function submitScore(score) {
-      return;
+    function submitScore(cookie, score) {
+      fetch('/', {method: 'PUT', body: JSON.stringify({
+        score: score
+      }), headers: { "X-CSRFToken": cookie },
+      })
+      .then(response => response.json())
+      .then(data => {
+        const sc = document.getElementById('score');
+        sc.innerText = data.score;
+        const pr = document.getElementById('promoted');
+        pr.innerText = `Promoted: ${data.promoted}`
+
+      });
     }
-    function submitScansion(submittedScansion) {
-      return;
+    function submitScansion(cookie, submittedScansion, diffs) {
+      fetch('/', {method: 'PUT', body: JSON.stringify({
+        scansion: submittedScansion,
+        id: CTXT.poem.id,
+        diffs: diffs
+      }), headers: { "X-CSRFToken": cookie },
+      })
+    }
+    
+    function getCookie() {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+          var cookies = document.cookie.split(';');
+          for (var i = 0; i < cookies.length; i++) {
+              var cookie = cookies[i].trim()
+              // Does this cookie string begin with the name we want?
+              if (cookie.substring(0, 'csrftoken'.length + 1) === ('csrftoken' + '=')) {
+                  cookieValue = decodeURIComponent(cookie.substring('csrftoken'.length + 1));
+                  break;
+              }
+          }
+      }
+      return cookieValue;
     }
     let best = CTXT.scansions['House Robber Scan'].scansion;
     if (CTXT.poem.authoritative) {
       best = CTXT.poem.authoritative;
     }
-    console.log(best);
-    /* I am afraid I should be scoring this thing server-side but I don't know why!
-    This function needs to:
-    1. Find percentage of words wrong, regardless
-    2. If the user is not promoted (i.e., not logged in or logged in and not up to 10 points), score their submission 1, 0, or -1
-    3. Produce an alert
-    4. Mark the syllables according to whether they are correct / agree with the most authoritative scansion
-    5. If the user is logged in, submit their score (not promoted) or their scansion (promoted) to the API*/
+    
     this.setState(state => {
-      const percentage = compareScansion(best, state.currentScansion);
+      const [diffs, percentage] = compareScansion(best, state.currentScansion);
       let score = scoreScansion(percentage);
       const au = isAuthenticated()
       const prom = isPromoted()
+      console.log(`Logged in: ${au}, promoted ${prom}`)
       makeCorrectAlert(au, prom, state.submitted, percentage, score);
+      const csrftoken = getCookie()
       if (au && prom) {
-        submitScansion(state.currentScansion);
+        submitScansion(csrftoken, state.currentScansion, diffs);
       } else if (au && !state.submitted) {
-        submitScore(score);
+        submitScore(csrftoken, score);
       }
       return ({
         submitted: true
