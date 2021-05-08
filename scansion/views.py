@@ -14,6 +14,7 @@ from random import choice
 
 from .models import User, Word, StressPattern, Poet, Poem, Algorithm, HumanScansion, MachineScansion
 from . import scan
+from . import parse
 
 ALGORITHMS = {"House Robber Scan": scan.house_robber_scan, "Original Scan": scan.original_scan, "Simple Scan": scan.simple_scan}
 
@@ -51,9 +52,35 @@ u u /u u /u
 
             p = Poem(title="A Sea Dirge",
                         poem=tempestuous,
-                        scansion=scansion)
+                        scansion=scansion,
+                        poet=Poet.objects.get(last_name="SHAKESPEARE"))
             p.save()
             return p
+    def make_dict(scansion):
+        """Make dictionary id-ing poem's words by line, word index"""
+        if not scansion:
+            return ""
+        else:
+            line_word_dict = {}
+            for i, line in enumerate(scansion.splitlines()):
+                line_word_dict[i] = {}
+                for j, word in enumerate(line.split()):
+                    line_word_dict[i][j] = word
+            print(line_word_dict)
+            return line_word_dict
+    
+    def make_dict_p(poem):
+        p = parse.clean_poem(poem)
+        line_word_dict = {}
+        for i, line in enumerate(poem.splitlines()):
+            line_word_dict[i] = {}
+            relevant_words = [word for word in line.split() if parse.clean(word)]
+            for j, word in enumerate(relevant_words):
+                line_word_dict[i][j] = word
+        print(line_word_dict)
+        return line_word_dict
+
+
 
     if request.method == "POST":
         pass
@@ -67,22 +94,45 @@ u u /u u /u
             poem = get_random_poem()
         else:
             poem = get_random_poem(only_human_scanned=True)
-        
+
         # get algorithms
         algorithms = Algorithm.objects.all().order_by("-preferred")
-        scansions = []
+        
+        # create scansion consisting entirely of "u" to pass to template for React
+        blank_slate_to_be = ALGORITHMS[algorithms[0].name](poem.poem)
+        almost_blank_slate = blank_slate_to_be.replace(parse.STRESSED, parse.UNSTRESSED)
+        blank_slate = almost_blank_slate.replace(parse.UNKNOWN, parse.UNSTRESSED)
+        scansions = {"Blank Slate" : {
+            "about-algorithm": "",
+            "scansion": make_dict(blank_slate)
+          }
+        }
+
         for algorithm in algorithms:
             try:
                 s = MachineScansion.objects.get(poem=poem, algorithm=algorithm)
-                scansions.append(s)
             except MachineScansion.DoesNotExist:
                 new_scan = ALGORITHMS[algorithm.name](poem.poem)
-                s = MachineScansion(poem=poem, algorithm=algorithm)
+                s = MachineScansion(poem=poem, scansion=new_scan, algorithm=algorithm)
                 s.save()
-                scansions.append(s)
+            scansions[algorithm.name] = {
+                    "about-algorithm": algorithm.about, 
+                    "scansion": make_dict(s.scansion)
+            }
+                
+        ctxt = {
+            "poem": {
+                "title" : poem.title,
+                "poem": poem.poem,
+                "poem_dict": make_dict_p(poem.poem),
+                "authoritative": make_dict(poem.scansion),
+                "poet": poem.poet.last_name
+            }, 
+            "scansions": scansions
+        }
 
         return render(request, "scansion/index.html", {
-            "poem" : poem, "scansions": scansions, "algorithms": algorithms
+            "ctxt" : ctxt
     })
 
 def login_view(request):
@@ -159,7 +209,24 @@ def rescan_poem(request, id):
             s.save()
             scansions.append(s)
         except MachineScansion.DoesNotExist:
-            s = MachineScansion(poem=poem, algorithm=algorithm)
+            s = MachineScansion(poem=poem, scansion=new_scan, algorithm=algorithm)
             s.save()
             scansions.append(s)
     return render(request, "scansion/index.html", {"poem": poem, "algorithms": algorithms, "scansions": scansions})
+
+@staff_member_required
+def rescan_all(request):
+    poems = Poem.objects.all()
+    algorithms = Algorithm.objects.all()
+    for poem in poems:
+        for algorithm in algorithms:
+            new_scan = ALGORITHMS[algorithm.name](poem.poem)
+        try:
+            s = MachineScansion.objects.get(poem=poem, algorithm=algorithm)
+            s.scansion = new_scan
+            s.save()
+        except MachineScansion.DoesNotExist:
+            s = MachineScansion(poem=poem, scansion=new_scan, algorithm=algorithm)
+            s.save()
+    return HttpResponseRedirect(reverse("index"))
+                

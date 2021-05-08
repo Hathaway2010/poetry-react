@@ -2,12 +2,10 @@
 {% load static %}
 
 {% block body %}
-    <div class="container">
+    <div>
         {% csrf_token %}
         <div id="root"></div>
-        {% poem|json_script: "poem" %}
-        {% algorithms|json_script: "algorithms" %}
-        {% scansions|json_script: "scansions" %}
+        {{ ctxt|json_script:"ctxt" }}
     </div>
 {% endblock %}
 

@@ -113,18 +113,13 @@ $shadow: 1px 1px 5px black;
   
   #poem-to-scan {
     border: 30px solid $dark;
-    box-shadow: 1px 1px 5px black;
+    box-shadow: 1px 1px 5px $darkest;
   }
-  .word {
+
+  td {
     text-align: center;
   }
-  .scansion, .autoscansion {
-    text-align: center;
-  }
-  .pmc {
-    text-align: center;
-  }
-  
+
   .symbol {
     padding: 3px;
     font-family: $monospace-font;
