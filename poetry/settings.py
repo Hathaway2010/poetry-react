@@ -78,12 +78,12 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    },
      # used this to load a previously loaded dictionary into the database
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': 'dictionaries.db'
-    # }
+    'preloaded': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'preloaded.db'
+    }
 }
 
 AUTH_USER_MODEL = "scansion.User"

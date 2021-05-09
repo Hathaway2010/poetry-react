@@ -3,8 +3,17 @@ import ReactDOM from 'react-dom';
 import styles from './styles.scss';
 
 const CTXT = JSON.parse(document.getElementById('ctxt').textContent);
+/* Still to implement:
+1. tooltips
+2. own_poem
+3. choose_poem on the page
+4. rescan poem button
+5. <3<3<3<3<3<3<3<3<3<3<3<3 
+6. algorithm about
+7. POEM GRAPHS EVENTUALLY MATPLOTLIB <3*/
 
-function Menu(props) {
+
+function ScansionMenu(props) {
   const options = [];
   for (let alg in CTXT.scansions) {
     options.push(<option key={alg} value={alg}>{alg}</option>)
@@ -335,7 +344,7 @@ class Scansion extends React.Component {
   render() {
     return (
       <div>
-        <Menu value={this.state.startingAlgorithm} onChange={this.handleSelect} />
+        <ScansionMenu value={this.state.startingAlgorithm} onChange={this.handleSelect} />
         <div className="container">
           <PoemInterface scansion={this.state.currentScansion} onSubmit={this.handleSubmit} onSymbolClick={this.handleToggle} onPClick={this.handlePlus} onMClick={this.handleMinus}/>
           <Poem />
