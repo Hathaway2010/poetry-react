@@ -214,12 +214,12 @@ class Scansion extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      ctxt: JSON.parse(document.getElementById('ctxt').textContent),
       startingAlgorithm: 'Blank Slate', 
-      currentScansion: CTXT.scansions['Blank Slate'].scansion, 
+      currentScansion: CTXT.scansions['Blank Slate'].scansion,
       submitted: false, 
       selectedPoet: CTXT.poem.poet, 
       selectedPoem: CTXT.poem.title,
-      poemObj: CTXT.poems
     };
     this.handleTooltipMouseover = this.handleTooltipMouseover.bind(this);
     this.handleTooltipMouseleave = this.handleTooltipMouseleave.bind(this);
