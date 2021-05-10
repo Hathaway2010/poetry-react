@@ -24,6 +24,7 @@ NEWLINE = re.compile("\r\n|\n|\r")
 DISALLOWED = re.compile("[^-A-Za-zé]")
 DASH = re.compile(" *-- *| *– *| *— *")
 SLASH = re.compile(" */ *")
+WORD = re.compile("\w+")
 
 # scansion symbols 
 UNKNOWN = "?"

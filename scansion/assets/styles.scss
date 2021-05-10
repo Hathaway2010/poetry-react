@@ -106,6 +106,7 @@ $shadow: 1px 1px 5px black;
     background-color: $lightest;
     box-shadow: $shadow;
     padding: 30px;
+    height: auto;
   }
   #id, .scansion-text {
     display: none;
@@ -187,8 +188,7 @@ $shadow: 1px 1px 5px black;
     display: flex;
     flex-direction: column;
   } */
-  .about-algorithm {
-    display: none;
+  #about-algorithm {
     font-family: $main-font;
     max-width: 500px;
     padding: 10px;

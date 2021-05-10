@@ -14,7 +14,6 @@
             <div id="wide-screen">
                 <a href="{% url 'index' %}">Scan</a>
                 <a href="{% url 'about' %}">About</a>
-                <a href="{% url 'choose_poem' %}">Choose a Poem</a>
                 {% if user.is_authenticated %}
                     <span>Logged in as {{ user.username }}</span>
                     {% if not user.is_promoted %}
@@ -34,7 +33,6 @@
                     <option value="" selected="selected">Select</option>
                     <option value="{% url 'index' %}">Scan</option>
                     <option value="{% url 'about' %}">About</option>
-                    <option value="{% url 'choose_poem' %}">Choose a Poem</option>
                     {% if user.is_authenticated %}
                         <option value="{% url 'logout' %}">Logout</option>
                     {% else %}

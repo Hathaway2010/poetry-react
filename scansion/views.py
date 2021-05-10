@@ -74,7 +74,7 @@ u u /u u /u
                 p.save()
             else:
                 p.scansion = s
-                p.save
+                p.save()
             
             
             p.human_scanned = True
@@ -124,20 +124,45 @@ u u /u u /u
                 s = MachineScansion(poem=poem, scansion=new_scan, algorithm=algorithm)
                 s.save()
             scansions[algorithm.name] = {
-                    "about-algorithm": algorithm.about, 
+                    "about_algorithm": algorithm.about, 
                     "scansion": parse.make_dict(s.scansion)
             }
+        
+        pts = Poet.objects.all().order_by("last_name")
+        poets = [poet.last_name for poet in pts]
+
+        if poem.title:
+            title = poem.title
+        else:
+            title = poem.first_line()
+
+        ps = Poem.objects.filter(poet=poem.poet)
+        poems_dict = {"human_scanned": [], "computer_scanned": []}
+        for p in ps:
+            if p.title:
+                title = p.title
+            else:
+                title = p.first_line()
+            poem_info = [p.pk, title]
+            if p.scansion:
+                poems_dict["human_scanned"].append(poem_info)
+            else:
+                poems_dict["computer_scanned"].append(poem_info)
+        
+
                 
         ctxt = {
             "poem": {
                 "id": poem.pk,
-                "title" : poem.title,
+                "title" : title,
                 "poem": poem.poem,
                 "poem_dict": parse.make_dict_p(poem.poem),
                 "authoritative": parse.make_dict(poem.scansion),
                 "poet": poem.poet.last_name
             }, 
-            "scansions": scansions
+            "scansions": scansions,
+            "poets": poets,
+            "poems": poems_dict
         }
 
         return render(request, "scansion/index.html", {
@@ -201,10 +226,25 @@ def register(request):
 def about(request):
     return render(request, "scansion/about.html")
 
-def choose_poem(request):
-    human_list = Poem.objects.exclude(scansion="").order_by("poet")
-    computer_list = Poem.objects.filter(scansion="").order_by("poet")
-    return render(request, "scansion/choose_poem.html", {"human_list": human_list, "computer_list": computer_list})
+def choose_poem(request, poet_name):
+    def get_data(poem_qset):
+        poem_data_list = []
+        for poem in poem_qset:
+            if poem.title:
+                title = poem.title
+            else:
+                title = poem.first_line()
+            poem_data_list.append([poem.pk, title])
+        return poem_data_list
+    poet = Poet.objects.get(last_name=poet_name)
+    poems = Poem.objects.filter(poet=poet)
+    human_queryset = poems.exclude(scansion="").order_by("poet")
+    human_list = get_data(human_queryset)
+    computer_queryset = poems.filter(scansion="").order_by("poet")
+    computer_list = get_data(computer_queryset)
+    data = {"human_scanned": human_list, "computer_scanned": computer_list}
+    print(data)
+    return JsonResponse(data)
 
 def rescan_poem(request, id):
     poem = Poem.objects.get(pk=id)

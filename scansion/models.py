@@ -81,12 +81,11 @@ class Poem(models.Model):
     poem = models.TextField()
     
     def first_line(self):
-        first_line_end = parse.NEWLINE.search(self.poem)
-        print(first_line_end)
-        if first_line_end:
-            return self.poem[: first_line_end.start()]
-        else:
-            return self.poem
+        lines = self.poem.splitlines()
+        for line in lines:
+            if line and parse.WORD.search(line):
+                return line
+        return "Nonexistent poem"
 
     def has_valid_scansion(self):
         for char in self.scansion:

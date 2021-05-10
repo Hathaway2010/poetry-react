@@ -4,14 +4,58 @@ import styles from './styles.scss';
 
 const CTXT = JSON.parse(document.getElementById('ctxt').textContent);
 /* Still to implement:
-1. tooltips
 2. own_poem
 3. choose_poem on the page
 4. rescan poem button
 5. <3<3<3<3<3<3<3<3<3<3<3<3 
-6. algorithm about
 7. POEM GRAPHS EVENTUALLY MATPLOTLIB <3*/
 
+function PoetMenu(props) {
+  const options = [];
+  for (let i = 0; i < CTXT.poets.length; i++) {
+    let p = CTXT.poets[i];
+    options.push(<option key={p} value={p}>{p}</option>)  
+  }
+  return (
+    <div>
+      <label htmlFor="poet-menu">Choose a poet:</label>
+      <select id="poet-menu" value={props.value} onChange={props.onChange}>
+        {options}
+      </select>
+    </div>
+  );
+}
+
+function PoemMenu(props) {
+  const options = [];
+  for (let i =0; i < props.options.human_scanned.length; i++) {
+    let p = props.options.human_scanned[i];
+    options.push(<option key={p[0]} value={p[0]}>{p[1]}</option>);
+  }
+  if (document.getElementById('promoted').textContent == 'Promoted: True') {
+    for (let i = 0; i < props.options.computer_scanned.length; i++) {
+      let p = props.options.computer_scanned[i];
+      options.push(<option key={`poem${p[0]}`} value={p[0]}>{p[1]}</option>);
+    }
+  }
+  return (
+    <div>
+      <label htmlFor="poem-menu">Choose a poem:</label>
+      <select id="poem-menu" value={props.value} onChange={props.onChange}>
+        {options}
+      </select>
+    </div>
+  );
+}
+
+function NewPoemButton(props) {
+  return (
+    <div>
+      <label htmlFor="submit-poem-choice">Go to new poem:</label>
+      <button id="submit-poem-choice" onClick={props.onClick}>Go</button>
+    </div>
+  );
+}
 
 function ScansionMenu(props) {
   const options = [];
@@ -21,7 +65,7 @@ function ScansionMenu(props) {
   return (
     <div>
       <label htmlFor='algorithm'>Choose Base Scansion (undoes changes)</label>
-      <select id='algorithm' name='algorithm' value={props.value} onChange={props.onChange}>
+      <select id='algorithm' value={props.value} onChange={props.onChange}>
         {options}
       </select>
     </div>
@@ -38,10 +82,20 @@ function Poem() {
   );
 }
 
+function AlgorithmAbout(props) {
+  if (props.text) {
+    return (
+      <div id="about-algorithm">{props.text}</div>
+    )
+  } else {
+    return null;
+  }
+}
+
 function PoemInterface(props) {
   const lines = [];
   for (let line in CTXT.poem.poem_dict) {
-    lines.push(<Line key={`line${line}`} id={line} word_obj={CTXT.poem.poem_dict[line]} scan_obj={props.scansion[line]} onSymbolClick={props.onSymbolClick} onPClick={props.onPClick} onMClick={props.onMClick}/>)
+    lines.push(<Line key={`line${line}`} id={line} showTooltip={props.showTooltip} hideTooltip={props.hideTooltip} word_obj={CTXT.poem.poem_dict[line]} scan_obj={props.scansion[line]} onSymbolClick={props.onSymbolClick} onPClick={props.onPClick} onMClick={props.onMClick}/>)
   }
   return (
     <div id='poem-to-scan'>
@@ -65,7 +119,7 @@ function Line(props) {
     const sCells = []
     for (let word in props.word_obj) {
       let keyAndId = `scansion${props.id}-${word}`
-      sCells.push(<ScanCell key={keyAndId} id={keyAndId} symbols={props.scan_obj[word]} onClick={props.onSymbolClick}/>)
+      sCells.push(<ScanCell key={keyAndId} id={keyAndId} showTooltip={props.showTooltip} hideTooltip={props.hideTooltip} symbols={props.scan_obj[word]} onClick={props.onSymbolClick}/>)
     }
     const wCells = []
     for (let word in props.word_obj) {
@@ -75,7 +129,7 @@ function Line(props) {
     const pmCells = []
     for (let word in props.word_obj) {
       let keyAndId = `pmc${props.id}-${word}`
-      pmCells.push(<PlusMinusCell key={keyAndId} id={keyAndId} onPClick={props.onPClick} onMClick={props.onMClick}/>)
+      pmCells.push(<PlusMinusCell key={keyAndId} id={keyAndId} showTooltip={props.showTooltip} hideTooltip={props.hideTooltip} onPClick={props.onPClick} onMClick={props.onMClick}/>)
     }
     return (
       <table id={`line${props.id}`}>
@@ -93,7 +147,7 @@ function ScanCell(props) {
   const symbols = []
   for (let i = 0; i < props.symbols.length; i++) {
     let keyAndId = `${props.id}-${i}`
-    symbols.push(<Symbol key={keyAndId} id={keyAndId} sym={props.symbols[i]} onClick={props.onClick} />)
+    symbols.push(<Symbol key={keyAndId} id={keyAndId} showTooltip={props.showTooltip} hideTooltip={props.hideTooltip} sym={props.symbols[i]} onClick={props.onClick} />)
   }
   return (
     <td id={props.id}>
@@ -104,7 +158,7 @@ function ScanCell(props) {
 
 function Symbol(props) {
   return (
-    <span className='symbol' id={props.id} onClick={props.onClick}>{props.sym}</span>
+    <span className='symbol' id={props.id} onMouseEnter={props.showTooltip} onMouseLeave={props.hideTooltip} onClick={props.onClick}>{props.sym}</span>
   );
 }
 
@@ -119,8 +173,8 @@ function WordCell(props) {
 function PlusMinusCell(props) {
   return (
     <td id={props.id} className='pmc'>
-      <Plus onClick={props.onPClick} id={props.id} />
-      <Minus onClick={props.onMClick} id={props.id} />
+      <Plus onClick={props.onPClick} showTooltip={props.showTooltip} hideTooltip={props.hideTooltip} id={props.id} />
+      <Minus onClick={props.onMClick} showTooltip={props.showTooltip} hideTooltip={props.hideTooltip} id={props.id} />
     </td>
   );
 
@@ -128,22 +182,25 @@ function PlusMinusCell(props) {
 
 function Plus(props) {
   return (
-    <button onClick={props.onClick} className='pm plus' id={`p${props.id}`}>+</button>
+    <button onClick={props.onClick} onMouseEnter={props.showTooltip} onMouseLeave={props.hideTooltip} className='pm plus' id={`p${props.id}`}>+</button>
   );
 }
 
 function Minus(props) {
   return (
-    <button onClick={props.onClick} className='pm minus' id={`m${props.id}`}>-</button>
+    <button onClick={props.onClick} onMouseEnter={props.showTooltip} onMouseLeave={props.hideTooltip} className='pm minus' id={`m${props.id}`}>-</button>
   );
 }
 
 function SymbolTooltip(props) {
-  return;
+  return (
+    <div className="tooltip" id="sctooltip">The "u" symbol means an unstressed syllable. "/" means a stressed syllable. Click to switch between symbols.</div>
+  )
 }
-
 function PlusMinusTooltip(props) {
-  return;
+  return (
+    <div className="tooltip" id="pmtooltip">The plus button adds a syllable. The minus removes one.</div>
+  )
 }
 
 function SubmitButton(props) {
@@ -156,14 +213,67 @@ function SubmitButton(props) {
 class Scansion extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {startingAlgorithm: 'Blank Slate', currentScansion: CTXT.scansions['Blank Slate'].scansion, submitted: false};
+    this.state = {
+      startingAlgorithm: 'Blank Slate', 
+      currentScansion: CTXT.scansions['Blank Slate'].scansion, 
+      submitted: false, 
+      selectedPoet: CTXT.poem.poet, 
+      selectedPoem: CTXT.poem.title,
+      poemObj: CTXT.poems
+    };
+    this.handleTooltipMouseover = this.handleTooltipMouseover.bind(this);
+    this.handleTooltipMouseleave = this.handleTooltipMouseleave.bind(this);
+    this.handleSelectPoet = this.handleSelectPoet.bind(this);
+    this.handleSelectPoem = this.handleSelectPoem.bind(this);
+    this.handleNewPoem = this.handleNewPoem.bind(this);
+    this.handleSelectScansion = this.handleSelectScansion.bind(this);
     this.handleToggle = this.handleToggle.bind(this);
     this.handlePlus = this.handlePlus.bind(this);
     this.handleMinus = this.handleMinus.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
-    this.handleSelect = this.handleSelect.bind(this);
   }
-  handleSelect(e) {
+  handleTooltipMouseover(e) {
+    const rect = e.target.getBoundingClientRect();
+    const tX = rect.right + 50;
+    const tY = rect.top + 10 + window.pageYOffset;
+    let tooltip;
+    if (e.target.className =="scansion" || e.target.className == "symbol") {
+      tooltip = document.getElementById("sctooltip");
+    } else {
+      tooltip = document.getElementById("pmtooltip");
+  }
+    tooltip.style.left = `${tX}px`;
+    tooltip.style.top = `${tY}px`;
+    tooltip.style.visibility = 'visible';
+  }
+  
+  handleTooltipMouseleave() {
+    const tooltips = document.querySelectorAll('.tooltip');
+    tooltips.forEach(element => {
+    element.style.visibility = 'hidden';
+    });
+  }
+  handleSelectPoet(e) {
+    const newPoet = e.target.value;
+    fetch(`/choose_poem/${newPoet}`)
+    .then(response => response.json())
+    .then(data => {
+      console.log(data);
+      this.setState({selectedPoet: newPoet, poemObj: data})
+    })
+    this.setState({selectedPoet: newPoet});
+  }
+
+  handleSelectPoem(e) {
+    const newPoem = e.target.value;
+    this.setState({selectedPoem: newPoem});
+  }
+
+  handleNewPoem(e) {
+    return;
+  }
+
+  handleSelectScansion(e) {
     const newScansion = e.target.value
     this.setState({startingAlgorithm: newScansion, currentScansion: CTXT.scansions[newScansion].scansion});
   }
@@ -344,10 +454,20 @@ class Scansion extends React.Component {
   render() {
     return (
       <div>
-        <ScansionMenu value={this.state.startingAlgorithm} onChange={this.handleSelect} />
+        <SymbolTooltip />
+        <PlusMinusTooltip />
+        <div id="menus">
+          <PoetMenu value={this.state.selectedPoet} onChange={this.handleSelectPoet}/>
+          <PoemMenu value={this.state.selectedPoem} options={this.state.poemObj} onChange={this.handleSelectPoem} />
+          <NewPoemButton onClick={this.handleNewPoem} />
+          <ScansionMenu value={this.state.startingAlgorithm} onChange={this.handleSelectScansion} />
+        </div>
         <div className="container">
-          <PoemInterface scansion={this.state.currentScansion} onSubmit={this.handleSubmit} onSymbolClick={this.handleToggle} onPClick={this.handlePlus} onMClick={this.handleMinus}/>
-          <Poem />
+          <PoemInterface scansion={this.state.currentScansion} onSubmit={this.handleSubmit} showTooltip={this.handleTooltipMouseover} hideTooltip={this.handleTooltipMouseleave} onSymbolClick={this.handleToggle} onPClick={this.handlePlus} onMClick={this.handleMinus}/>
+          <div id="provided">
+            <Poem />
+            <AlgorithmAbout text={CTXT.scansions[this.state.startingAlgorithm].about_algorithm}/>
+          </div>
         </div>
       </div>
     )
