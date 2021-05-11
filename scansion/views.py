@@ -5,6 +5,7 @@ from django.urls import reverse
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import authenticate, login, logout
 from django.db.models import Max
+from django.db import IntegrityError
 from django.views.decorators.csrf import csrf_exempt
 from django.template.defaulttags import register
 
@@ -17,6 +18,72 @@ from . import scan
 from . import parse
 
 ALGORITHMS = {"House Robber Scan": scan.house_robber_scan, "Original Scan": scan.original_scan, "Simple Scan": scan.simple_scan}
+
+def generate_context(poem, promoted):
+       # get algorithms
+        algorithms = Algorithm.objects.all().order_by("-preferred")
+        
+        # create scansion consisting entirely of "u" to pass to template for React
+        blank_slate_to_be = ALGORITHMS[algorithms[0].name](poem.poem)
+        almost_blank_slate = blank_slate_to_be.replace(parse.STRESSED, parse.UNSTRESSED)
+        blank_slate = almost_blank_slate.replace(parse.UNKNOWN, parse.UNSTRESSED)
+        scansions = {"Blank Slate" : {
+            "about-algorithm": "",
+            "scansion": parse.make_dict(blank_slate)
+          }
+        }
+        for algorithm in algorithms:
+            try:
+                s = MachineScansion.objects.get(poem=poem, algorithm=algorithm)
+            except MachineScansion.DoesNotExist:
+                new_scan = ALGORITHMS[algorithm.name](poem.poem)
+                s = MachineScansion(poem=poem, scansion=new_scan, algorithm=algorithm)
+                s.save()
+            scansions[algorithm.name] = {
+                    "about_algorithm": algorithm.about, 
+                    "scansion": parse.make_dict(s.scansion)
+            }
+        
+        pts = Poet.objects.all().order_by("last_name")
+        if promoted:
+            poets = [poet.last_name for poet in pts]
+        else:
+            poets = []
+            for poet in pts:
+                if Poem.objects.filter(poet=poet).exclude(scansion="").exists():
+                    poets.append(poet.last_name)
+
+        if poem.title:
+            title = poem.title
+        else:
+            title = poem.first_line()
+
+        ps = Poem.objects.filter(poet=poem.poet)
+        poems_dict = {"human_scanned": [], "computer_scanned": []}
+        for p in ps:
+            if p.title:
+                title = p.title
+            else:
+                title = p.first_line()
+            poem_info = [p.pk, title]
+            if p.scansion:
+                poems_dict["human_scanned"].append(poem_info)
+            else:
+                poems_dict["computer_scanned"].append(poem_info)
+                
+        return {
+            "poem": {
+                "id": poem.pk,
+                "title" : title,
+                "poem": poem.poem,
+                "poem_dict": parse.make_dict_p(poem.poem),
+                "authoritative": parse.make_dict(poem.scansion),
+                "poet": poem.poet.last_name
+            }, 
+            "scansions": scansions,
+            "poets": poets,
+            "poems": poems_dict
+        }
 
 
 # Create your views here.
@@ -103,71 +170,15 @@ u u /u u /u
         else:
             poem = get_random_poem(only_human_scanned=True)
 
-        # get algorithms
-        algorithms = Algorithm.objects.all().order_by("-preferred")
-        
-        # create scansion consisting entirely of "u" to pass to template for React
-        blank_slate_to_be = ALGORITHMS[algorithms[0].name](poem.poem)
-        almost_blank_slate = blank_slate_to_be.replace(parse.STRESSED, parse.UNSTRESSED)
-        blank_slate = almost_blank_slate.replace(parse.UNKNOWN, parse.UNSTRESSED)
-        scansions = {"Blank Slate" : {
-            "about-algorithm": "",
-            "scansion": parse.make_dict(blank_slate)
-          }
-        }
-
-        for algorithm in algorithms:
-            try:
-                s = MachineScansion.objects.get(poem=poem, algorithm=algorithm)
-            except MachineScansion.DoesNotExist:
-                new_scan = ALGORITHMS[algorithm.name](poem.poem)
-                s = MachineScansion(poem=poem, scansion=new_scan, algorithm=algorithm)
-                s.save()
-            scansions[algorithm.name] = {
-                    "about_algorithm": algorithm.about, 
-                    "scansion": parse.make_dict(s.scansion)
-            }
-        
-        pts = Poet.objects.all().order_by("last_name")
-        poets = [poet.last_name for poet in pts]
-
-        if poem.title:
-            title = poem.title
-        else:
-            title = poem.first_line()
-
-        ps = Poem.objects.filter(poet=poem.poet)
-        poems_dict = {"human_scanned": [], "computer_scanned": []}
-        for p in ps:
-            if p.title:
-                title = p.title
-            else:
-                title = p.first_line()
-            poem_info = [p.pk, title]
-            if p.scansion:
-                poems_dict["human_scanned"].append(poem_info)
-            else:
-                poems_dict["computer_scanned"].append(poem_info)
-        
-
-                
-        ctxt = {
-            "poem": {
-                "id": poem.pk,
-                "title" : title,
-                "poem": poem.poem,
-                "poem_dict": parse.make_dict_p(poem.poem),
-                "authoritative": parse.make_dict(poem.scansion),
-                "poet": poem.poet.last_name
-            }, 
-            "scansions": scansions,
-            "poets": poets,
-            "poems": poems_dict
-        }
+       
 
         return render(request, "scansion/index.html", {
-            "ctxt" : ctxt
+            "ctxt" : generate_context(poem, request.user.is_authenticated and request.user.is_promoted())
     })
+def poem(request, id):
+    poem = Poem.objects.get(pk=id)
+    data = generate_context(poem, request.user.is_authenticated and request.user.is_promoted())
+    return JsonResponse(data)
 
 def login_view(request):
     if request.method == "POST":
@@ -248,20 +259,34 @@ def choose_poem(request, poet_name):
 
 def rescan_poem(request, id):
     poem = Poem.objects.get(pk=id)
-    algorithms = Algorithm.objects.all()
-    scansions = []
+    algorithms = Algorithm.objects.all().order_by("-preferred")
+    blank_slate_to_be = ALGORITHMS[algorithms[0].name](poem.poem)
+    almost_blank_slate = blank_slate_to_be.replace(parse.STRESSED, parse.UNSTRESSED)
+    blank_slate = almost_blank_slate.replace(parse.UNKNOWN, parse.UNSTRESSED)
+    scansions = {
+        "Blank Slate" : {
+            "about-algorithm": "",
+            "scansion": parse.make_dict(blank_slate)
+          }
+        }    
     for algorithm in algorithms:
         new_scan = ALGORITHMS[algorithm.name](poem.poem)
         try:
             s = MachineScansion.objects.get(poem=poem, algorithm=algorithm)
             s.scasion = new_scan
             s.save()
-            scansions.append(s)
         except MachineScansion.DoesNotExist:
             s = MachineScansion(poem=poem, scansion=new_scan, algorithm=algorithm)
             s.save()
-            scansions.append(s)
-    return render(request, "scansion/index.html", {"poem": poem, "algorithms": algorithms, "scansions": scansions})
+        scansions[algorithm.name] = {
+            "about-algorithm": algorithm.about, 
+            "scansion": parse.make_dict(new_scan)
+        }
+        
+        data = {
+            "scansions": scansions
+        }
+    return JsonResponse(data)
 
 @staff_member_required
 def rescan_all(request):

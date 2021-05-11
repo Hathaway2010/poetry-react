@@ -2,18 +2,17 @@ import React from 'react';
 import ReactDOM from 'react-dom'; 
 import styles from './styles.scss';
 
-const CTXT = JSON.parse(document.getElementById('ctxt').textContent);
 /* Still to implement:
 2. own_poem
-3. choose_poem on the page
-4. rescan poem button
-5. <3<3<3<3<3<3<3<3<3<3<3<3 
 7. POEM GRAPHS EVENTUALLY MATPLOTLIB <3*/
+
+const CTXT = JSON.parse(document.getElementById('ctxt').textContent);
+
 
 function PoetMenu(props) {
   const options = [];
-  for (let i = 0; i < CTXT.poets.length; i++) {
-    let p = CTXT.poets[i];
+  for (let i = 0; i < props.poets.length; i++) {
+    let p = props.poets[i];
     options.push(<option key={p} value={p}>{p}</option>)  
   }
   return (
@@ -32,7 +31,8 @@ function PoemMenu(props) {
     let p = props.options.human_scanned[i];
     options.push(<option key={p[0]} value={p[0]}>{p[1]}</option>);
   }
-  if (document.getElementById('promoted').textContent == 'Promoted: True') {
+  const promoted = document.getElementById('promoted')
+  if (promoted && promoted.textContent == 'Promoted: True') {
     for (let i = 0; i < props.options.computer_scanned.length; i++) {
       let p = props.options.computer_scanned[i];
       options.push(<option key={`poem${p[0]}`} value={p[0]}>{p[1]}</option>);
@@ -59,7 +59,7 @@ function NewPoemButton(props) {
 
 function ScansionMenu(props) {
   const options = [];
-  for (let alg in CTXT.scansions) {
+  for (let alg in props.scansions) {
     options.push(<option key={alg} value={alg}>{alg}</option>)
   }
   return (
@@ -72,14 +72,27 @@ function ScansionMenu(props) {
   );
 }
 
-function Poem() {
+function RescanButton(props) {
   return (
-    <div id="original-poem">
-      <h3>{CTXT.poem.title}</h3>
-      <p>by {CTXT.poem.poet}</p>
-      <pre id="poem-text">{CTXT.poem.poem}</pre>  
+    <div>
+      <label htmlFor="rescan">Rescan poem using the latest data</label>
+      <button id="rescan" onClick={props.onClick}>Rescan</button>
     </div>
-  );
+  )
+}
+
+function Poem(props) {
+  if (props.loading) {
+    return null;
+  } else {
+    return (
+      <div id="original-poem">
+        <h3>{props.title}</h3>
+        <p>by {props.poet}</p>
+        <pre id="poem-text">{props.poem}</pre>  
+      </div>
+    );
+  }
 }
 
 function AlgorithmAbout(props) {
@@ -93,18 +106,23 @@ function AlgorithmAbout(props) {
 }
 
 function PoemInterface(props) {
-  const lines = [];
-  for (let line in CTXT.poem.poem_dict) {
-    lines.push(<Line key={`line${line}`} id={line} showTooltip={props.showTooltip} hideTooltip={props.hideTooltip} word_obj={CTXT.poem.poem_dict[line]} scan_obj={props.scansion[line]} onSymbolClick={props.onSymbolClick} onPClick={props.onPClick} onMClick={props.onMClick}/>)
+  if (props.loading) {
+    return (
+      <div>...Loading new poem, please wait...</div>
+    )
+  } else {
+    const lines = [];
+    for (let line in props.poemObj) {
+      lines.push(<Line key={`line${line}`} id={line} showTooltip={props.showTooltip} hideTooltip={props.hideTooltip} word_obj={props.poemObj[line]} scan_obj={props.scansion[line]} onSymbolClick={props.onSymbolClick} onPClick={props.onPClick} onMClick={props.onMClick}/>)
+    }
+    return (
+      <div id='poem-to-scan'>
+        {lines}
+        <SubmitButton onSubmit={props.onSubmit} />
+      </div>
+    );
   }
-  return (
-    <div id='poem-to-scan'>
-      {lines}
-      <SubmitButton onSubmit={props.onSubmit} />
-    </div>
-  );
 }
-
 function Line(props) {
   if (!props.word_obj || !props.scan_obj) {
     return (
@@ -145,15 +163,19 @@ function Line(props) {
 
 function ScanCell(props) {
   const symbols = []
-  for (let i = 0; i < props.symbols.length; i++) {
-    let keyAndId = `${props.id}-${i}`
-    symbols.push(<Symbol key={keyAndId} id={keyAndId} showTooltip={props.showTooltip} hideTooltip={props.hideTooltip} sym={props.symbols[i]} onClick={props.onClick} />)
+  if (symbols) {
+    for (let i = 0; i < props.symbols.length; i++) {
+      let keyAndId = `${props.id}-${i}`
+      symbols.push(<Symbol key={keyAndId} id={keyAndId} showTooltip={props.showTooltip} hideTooltip={props.hideTooltip} sym={props.symbols[i]} onClick={props.onClick} />)
+    }
+    return (
+      <td id={props.id}>
+        {symbols}
+      </td>
+    );
+  } else {
+    return null
   }
-  return (
-    <td id={props.id}>
-      {symbols}
-    </td>
-  );
 }
 
 function Symbol(props) {
@@ -163,11 +185,15 @@ function Symbol(props) {
 }
 
 function WordCell(props) {
-  return (
-    <td id={props.id}>
-      {props.word}
-    </td>
-  );
+  if (props.word) {
+    return (
+      <td id={props.id}>
+        {props.word}
+      </td>
+    );
+  } else {
+    return null
+  }
 }
 
 function PlusMinusCell(props) {
@@ -192,12 +218,12 @@ function Minus(props) {
   );
 }
 
-function SymbolTooltip(props) {
+function SymbolTooltip() {
   return (
     <div className="tooltip" id="sctooltip">The "u" symbol means an unstressed syllable. "/" means a stressed syllable. Click to switch between symbols.</div>
   )
 }
-function PlusMinusTooltip(props) {
+function PlusMinusTooltip() {
   return (
     <div className="tooltip" id="pmtooltip">The plus button adds a syllable. The minus removes one.</div>
   )
@@ -214,18 +240,21 @@ class Scansion extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      ctxt: JSON.parse(document.getElementById('ctxt').textContent),
+      ctxt: CTXT,
       startingAlgorithm: 'Blank Slate', 
       currentScansion: CTXT.scansions['Blank Slate'].scansion,
       submitted: false, 
       selectedPoet: CTXT.poem.poet, 
-      selectedPoem: CTXT.poem.title,
+      selectedPoem: CTXT.poem.id,
+      poems: CTXT.poems,
+      loading: false,
     };
     this.handleTooltipMouseover = this.handleTooltipMouseover.bind(this);
     this.handleTooltipMouseleave = this.handleTooltipMouseleave.bind(this);
     this.handleSelectPoet = this.handleSelectPoet.bind(this);
     this.handleSelectPoem = this.handleSelectPoem.bind(this);
     this.handleNewPoem = this.handleNewPoem.bind(this);
+    this.handleRescan = this.handleRescan.bind(this)
     this.handleSelectScansion = this.handleSelectScansion.bind(this);
     this.handleToggle = this.handleToggle.bind(this);
     this.handlePlus = this.handlePlus.bind(this);
@@ -255,27 +284,66 @@ class Scansion extends React.Component {
   }
   handleSelectPoet(e) {
     const newPoet = e.target.value;
+    console.log(newPoet);
+    this.setState({selectedPoet: newPoet});
     fetch(`/choose_poem/${newPoet}`)
     .then(response => response.json())
     .then(data => {
       console.log(data);
-      this.setState({selectedPoet: newPoet, poemObj: data})
+      this.setState({poems: data})
+      if (data.human_scanned !== undefined && data.human_scanned[0] !== undefined) {
+        console.log(data.human_scanned[0][0])
+        this.setState({selectedPoem: data.human_scanned[0][0]});
+      } else {
+        console.log(data.computer_scanned[0][0])
+        this.setState({selectedPoem: data.computer_scanned[0][0]});
+      }
     })
-    this.setState({selectedPoet: newPoet});
-  }
+    .then(console.log(`Now selected: ${this.state.selectedPoem}`));
+    }
 
   handleSelectPoem(e) {
     const newPoem = e.target.value;
+    console.log(`About to set state to poem #${newPoem}`)
     this.setState({selectedPoem: newPoem});
+    console.log(newPoem)
   }
 
-  handleNewPoem(e) {
-    return;
+  handleNewPoem() {
+    this.setState({loading: true})
+    this.setState(state => {
+      fetch(`/poem/${state.selectedPoem}`)
+      .then(response => response.json())
+      .then(data => this.setState({
+          ctxt: data,
+          startingAlgorithm: "Blank Slate",
+          currentScansion: data.scansions["Blank Slate"].scansion,
+          submitted: false,
+          selectedPoet: data.poem.poet,
+          selectedPoem: data.poem.id,
+          poems: data.poems,
+          loading: false
+      }));
+    });
   }
 
   handleSelectScansion(e) {
     const newScansion = e.target.value
-    this.setState({startingAlgorithm: newScansion, currentScansion: CTXT.scansions[newScansion].scansion});
+    this.setState(state => ({startingAlgorithm: newScansion, currentScansion: state.ctxt.scansions[newScansion].scansion}));
+  }
+  
+  handleRescan() {
+    this.setState({loading: true})
+    this.setState(state => {
+      fetch(`/rescan_poem/${state.ctxt.poem.id}`)
+      .then(response => response.json())
+      .then(data => {
+        this.setState({
+          scansions: data,
+          loading: false
+        });
+      });
+    });
   }
 
   handleToggle(e) {
@@ -427,9 +495,9 @@ class Scansion extends React.Component {
       }
       return cookieValue;
     }
-    let best = CTXT.scansions['House Robber Scan'].scansion;
-    if (CTXT.poem.authoritative) {
-      best = CTXT.poem.authoritative;
+    let best = this.state.ctxt.scansions['House Robber Scan'].scansion;
+    if (this.state.ctxt.poem.authoritative) {
+      best = this.state.ctxt.poem.authoritative;
     }
     
     this.setState(state => {
@@ -456,17 +524,20 @@ class Scansion extends React.Component {
       <div>
         <SymbolTooltip />
         <PlusMinusTooltip />
-        <div id="menus">
-          <PoetMenu value={this.state.selectedPoet} onChange={this.handleSelectPoet}/>
-          <PoemMenu value={this.state.selectedPoem} options={this.state.poemObj} onChange={this.handleSelectPoem} />
+        <div id="poem-menus" class="menus">
+          <PoetMenu value={this.state.selectedPoet} poets={this.state.ctxt.poets} onChange={this.handleSelectPoet}/>
+          <PoemMenu value={this.state.selectedPoem} options={this.state.poems} onChange={this.handleSelectPoem} />
           <NewPoemButton onClick={this.handleNewPoem} />
-          <ScansionMenu value={this.state.startingAlgorithm} onChange={this.handleSelectScansion} />
+        </div>
+        <div id="scansion-menus" class="menus">
+          <ScansionMenu value={this.state.startingAlgorithm} scansions={this.state.ctxt.scansions} onChange={this.handleSelectScansion} />
+          <RescanButton onClick={this.handleRescan}/>
         </div>
         <div className="container">
-          <PoemInterface scansion={this.state.currentScansion} onSubmit={this.handleSubmit} showTooltip={this.handleTooltipMouseover} hideTooltip={this.handleTooltipMouseleave} onSymbolClick={this.handleToggle} onPClick={this.handlePlus} onMClick={this.handleMinus}/>
+          <PoemInterface poemObj={this.state.ctxt.poem.poem_dict} scansion={this.state.currentScansion} onSubmit={this.handleSubmit} showTooltip={this.handleTooltipMouseover} hideTooltip={this.handleTooltipMouseleave} onSymbolClick={this.handleToggle} onPClick={this.handlePlus} onMClick={this.handleMinus} loading={this.state.loading}/>
           <div id="provided">
-            <Poem />
-            <AlgorithmAbout text={CTXT.scansions[this.state.startingAlgorithm].about_algorithm}/>
+            <Poem title={this.state.ctxt.poem.title} poet={this.state.ctxt.poem.poet} poem={this.state.ctxt.poem.poem} loading={this.state.loading} />
+            <AlgorithmAbout text={this.state.ctxt.scansions[this.state.startingAlgorithm].about_algorithm}/>
           </div>
         </div>
       </div>
