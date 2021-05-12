@@ -11,5 +11,6 @@ urlpatterns = [
     path("logout", views.logout_view, name="logout"),
     path("register", views.register, name="register"),
     path("rescan_poem/<int:id>", views.rescan_poem, name="rescan_poem"),
-    path("rescan_all", views.rescan_all, name="rescan_all")
+    path("rescan_all", views.rescan_all, name="rescan_all"),
+    path("own_poem", views.own_poem, name="own_poem")
 ]

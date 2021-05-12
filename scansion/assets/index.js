@@ -244,7 +244,7 @@ function SubmitButton(props) {
 function OwnPoem(props) {
   return (
     <div>
-      <label for="own-poem">Paste in a poem of your choice to scan (poem will not be saved; nothing private, though, please):</label>
+      <label htmlFor="own-poem">Paste in a poem of your choice to scan (poem will not be saved; nothing private, though, please):</label>
       <textarea id="own-poem" value={props.input} onChange={props.onChange} />
     </div>
   )
@@ -268,6 +268,7 @@ class Scansion extends React.Component {
       selectedPoem: CTXT.poem.id,
       poems: CTXT.poems,
       loading: false,
+      own_poem: false
     };
     this.handleTooltipMouseover = this.handleTooltipMouseover.bind(this);
     this.handleTooltipMouseleave = this.handleTooltipMouseleave.bind(this);
@@ -345,7 +346,8 @@ class Scansion extends React.Component {
           selectedPoem: data.poem.id,
           poems: data.poems,
           loading: false,
-          input: ''
+          input: '',
+          ownPoem: false
       }));
     });
   }
@@ -420,6 +422,8 @@ class Scansion extends React.Component {
     function compareScansion(authoritative, submitted) {
       let wordCount = 0;
       const diffList = []
+      console.log(authoritative);
+      console.log(submitted);
       for (let line in submitted) {
         if (line) {
           for (let word in submitted[line]) {
@@ -445,10 +449,12 @@ class Scansion extends React.Component {
       }
     }
 
-    function makeCorrectAlert(userIsAuthenticated, userIsPromoted, submitted, percentage, score) {
+    function makeCorrectAlert(userIsAuthenticated, userIsPromoted, submitted, percentage, score, own) {
       const SCORES = {'1': 'gained', '0': 'neither gained nor lost', '-1': 'lost'}
       if (userIsAuthenticated && userIsPromoted) {
         alert(`New stresses will be recorded, but this will take a moment; disagreements between you and previous scansion (${percentage}% of words) will be marked in red, agreements in green.`);
+      } else if (own) {
+        alert(`You disagreed with the best machine scansion at ${percentage} of words; look at the poem to see where scansions differ.`)
       } else if (userIsAuthenticated && !submitted) {
         alert(`You have ${SCORES[score.toString()]} a point! Look at the poem to see where your scansion differed (${percentage}% of words) from the most recent authoritative scansion.`);
       } else if (userIsAuthenticated || submitted) {
@@ -494,10 +500,11 @@ class Scansion extends React.Component {
 
       });
     }
-    function submitScansion(cookie, submittedScansion, diffs) {
+    function submitScansion(cookie, submittedScansion, id, poem, diffs) {
       fetch('/', {method: 'PUT', body: JSON.stringify({
         scansion: submittedScansion,
-        id: CTXT.poem.id,
+        id: id,
+        poem: poem,
         diffs: diffs
       }), headers: { "X-CSRFToken": cookie },
       })
@@ -518,22 +525,23 @@ class Scansion extends React.Component {
       }
       return cookieValue;
     }
-    let best = this.state.ctxt.scansions['House Robber Scan'].scansion;
-    if (this.state.ctxt.poem.authoritative) {
-      best = this.state.ctxt.poem.authoritative;
-    }
+    
     
     this.setState(state => {
+      let best = this.state.ctxt.scansions['House Robber Scan'].scansion;
+      if (this.state.ctxt.poem.authoritative) {
+        best = this.state.ctxt.poem.authoritative;
+      }
+      const own = state.ownPoem;
       const [diffs, percentage] = compareScansion(best, state.currentScansion);
       let score = scoreScansion(percentage);
-      const au = isAuthenticated()
-      const prom = isPromoted()
-      console.log(`Logged in: ${au}, promoted ${prom}`)
-      makeCorrectAlert(au, prom, state.submitted, percentage, score);
+      const au = isAuthenticated();
+      const prom = isPromoted();
+      makeCorrectAlert(au, prom, state.submitted, percentage, score, own);
       const csrftoken = getCookie()
       if (au && prom) {
-        submitScansion(csrftoken, state.currentScansion, diffs);
-      } else if (au && !state.submitted) {
+        submitScansion(csrftoken, state.currentScansion, diffs, state.ctxt.poem.id, state.ctxt.poem.poem);
+      } else if (au && !state.submitted && !own) {
         submitScore(csrftoken, score);
       }
       return ({
@@ -546,7 +554,42 @@ class Scansion extends React.Component {
   }
 
   handleSubmitOwn() {
-    return;
+    function getCookie() {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+          var cookies = document.cookie.split(';');
+          for (var i = 0; i < cookies.length; i++) {
+              var cookie = cookies[i].trim()
+              // Does this cookie string begin with the name we want?
+              if (cookie.substring(0, 'csrftoken'.length + 1) === ('csrftoken' + '=')) {
+                  cookieValue = decodeURIComponent(cookie.substring('csrftoken'.length + 1));
+                  break;
+              }
+          }
+      }
+      return cookieValue;
+    }
+    this.setState({loading: true})
+    this.setState(state => {
+      const poem = state.input;
+      console.log(poem)
+      fetch('/own_poem', {method: 'POST', body: JSON.stringify(
+        {
+          'poem': `${poem}`
+        }),
+        headers: {'X-CSRFToken': getCookie()}
+       } )
+      .then(response => response.json())
+      .then(data => this.setState({
+          ctxt: data,
+          startingAlgorithm: 'Blank Slate', 
+          currentScansion: data.scansions['Blank Slate'].scansion,
+          submitted: false, 
+          loading: false,
+          input: '',
+          ownPoem: true
+      }));
+    });
   }
 
   render() {

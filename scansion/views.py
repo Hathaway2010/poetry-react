@@ -130,23 +130,24 @@ u u /u u /u
         if request.user.is_authenticated and request.user.is_promoted():
             # update poem's scansion in the poem table and mark it human-scanned
             s = parse.make_string(data["scansion"])
-            p = Poem.objects.get(pk=data["id"])
-            hs = HumanScansion(poem=p, scansion=s, user=request.user)
-            hs.save()
-            if p.scansion:
-                h = HumanScansion.objects.filter(poem=p)
-                p.scansion = scan.reconcile(p.scansion, h, data["diffs"])
+            id = data["id"]
+            if id:
+                p = Poem.objects.get(pk=data["id"])
+                hs = HumanScansion(poem=p, scansion=s, user=request.user)
+                hs.save()
+                if p.scansion:
+                    h = HumanScansion.objects.filter(poem=p)
+                    p.scansion = scan.reconcile(p.scansion, h, data["diffs"])
+                    p.save()
+                else:
+                    p.scansion = s
+                    p.save()
+                      
+                p.human_scanned = True
                 p.save()
-            else:
-                p.scansion = s
-                p.save()
-            
-            
-            p.human_scanned = True
-            p.save()
             # use record function from scan.py to update popularities of word scansions
             # in Pronunciation instances
-            scan.record(p.poem, s)
+            scan.record(data["poem"], s)
             return HttpResponse()
 
         # otherwise, score the user
@@ -318,16 +319,30 @@ def own_poem(request):
           }
         }
         for algorithm in algorithms:
-            new_scan = ALGORITHMS[algorithm.name](poem.poem)
+            new_scan = ALGORITHMS[algorithm.name](poem)
             scansions[algorithm.name] = {
                     "about_algorithm": algorithm.about, 
                     "scansion": parse.make_dict(new_scan)
             }
+        pts = Poet.objects.all().order_by("last_name")
+        if request.user.is_authenticated and request.user.is_promoted():
+            poets = [poet.last_name for poet in pts]
+        else:
+            poets = []
+            for poet in pts:
+                if Poem.objects.filter(poet=poet).exclude(scansion="").exists():
+                    poets.append(poet.last_name)
+       
         data = {
             "poem": {
+                "id": None,
+                "title": "Unknown",
                 "poem": poem,
                 "poem_dict": parse.make_dict_p(poem),
+                "authoritative": None,
+                "poet": "Unknown"
            }, 
            "scansions": scansions,
+           "poets": poets
         }
         return JsonResponse(data)
