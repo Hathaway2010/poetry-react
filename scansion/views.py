@@ -20,7 +20,7 @@ from . import parse
 ALGORITHMS = {"House Robber Scan": scan.house_robber_scan, "Original Scan": scan.original_scan, "Simple Scan": scan.simple_scan}
 
 def generate_context(poem, promoted):
-       # get algorithms
+        # get algorithms
         algorithms = Algorithm.objects.all().order_by("-preferred")
         
         # create scansion consisting entirely of "u" to pass to template for React
@@ -123,10 +123,8 @@ u u /u u /u
                         poet=Poet.objects.get(last_name="SHAKESPEARE"))
             p.save()
             return p
-    
-    if request.method == "POST":
-        pass
-    elif request.method == "PUT":
+
+    if request.method == "PUT":
         data = json.loads(request.body)
         # if the user has proven themselves, write their scansion to the database
         if request.user.is_authenticated and request.user.is_promoted():
@@ -302,5 +300,34 @@ def rescan_all(request):
         except MachineScansion.DoesNotExist:
             s = MachineScansion(poem=poem, scansion=new_scan, algorithm=algorithm)
             s.save()
-    return HttpResponseRedirect(reverse("index"))
-                
+    return HttpResponseRedirect(reverse("index"))    
+
+def own_poem(request):
+        data = json.loads(request.body)
+        poem = data["poem"]       
+        # get algorithms
+        algorithms = Algorithm.objects.all().order_by("-preferred")
+        
+        # create scansion consisting entirely of "u" to pass to template for React
+        blank_slate_to_be = ALGORITHMS[algorithms[0].name](poem)
+        almost_blank_slate = blank_slate_to_be.replace(parse.STRESSED, parse.UNSTRESSED)
+        blank_slate = almost_blank_slate.replace(parse.UNKNOWN, parse.UNSTRESSED)
+        scansions = {"Blank Slate" : {
+            "about-algorithm": "",
+            "scansion": parse.make_dict(blank_slate)
+          }
+        }
+        for algorithm in algorithms:
+            new_scan = ALGORITHMS[algorithm.name](poem.poem)
+            scansions[algorithm.name] = {
+                    "about_algorithm": algorithm.about, 
+                    "scansion": parse.make_dict(new_scan)
+            }
+        data = {
+            "poem": {
+                "poem": poem,
+                "poem_dict": parse.make_dict_p(poem),
+           }, 
+           "scansions": scansions,
+        }
+        return JsonResponse(data)

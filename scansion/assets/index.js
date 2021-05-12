@@ -179,9 +179,15 @@ function ScanCell(props) {
 }
 
 function Symbol(props) {
-  return (
-    <span className='symbol' id={props.id} onMouseEnter={props.showTooltip} onMouseLeave={props.hideTooltip} onClick={props.onClick}>{props.sym}</span>
-  );
+  if (props.sym === '/') {
+    return (
+      <span className='symbol stressed' id={props.id} onMouseEnter={props.showTooltip} onMouseLeave={props.hideTooltip} onClick={props.onClick}>{props.sym}</span>
+    )
+  } else {
+    return (
+      <span className='symbol' id={props.id} onMouseEnter={props.showTooltip} onMouseLeave={props.hideTooltip} onClick={props.onClick}>{props.sym}</span>
+    );
+  }
 }
 
 function WordCell(props) {
@@ -235,6 +241,20 @@ function SubmitButton(props) {
   );
 }
 
+function OwnPoem(props) {
+  return (
+    <div>
+      <label for="own-poem">Paste in a poem of your choice to scan (poem will not be saved; nothing private, though, please):</label>
+      <textarea id="own-poem" value={props.input} onChange={props.onChange} />
+    </div>
+  )
+}
+
+function SubmitOwnPoem(props) {
+  return (
+    <button onClick={props.onClick}>Scan</button>
+  );
+}
 
 class Scansion extends React.Component {
   constructor(props) {
@@ -260,6 +280,8 @@ class Scansion extends React.Component {
     this.handlePlus = this.handlePlus.bind(this);
     this.handleMinus = this.handleMinus.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleText = this.handleText.bind(this);
+    this.handleSubmitOwn = this.handleSubmitOwn.bind(this);
   }
   handleTooltipMouseover(e) {
     const rect = e.target.getBoundingClientRect();
@@ -322,7 +344,8 @@ class Scansion extends React.Component {
           selectedPoet: data.poem.poet,
           selectedPoem: data.poem.id,
           poems: data.poems,
-          loading: false
+          loading: false,
+          input: ''
       }));
     });
   }
@@ -518,18 +541,25 @@ class Scansion extends React.Component {
       });
     });
   }
+  handleText(e) {
+    this.setState({input: e.target.value});
+  }
+
+  handleSubmitOwn() {
+    return;
+  }
 
   render() {
     return (
       <div>
         <SymbolTooltip />
         <PlusMinusTooltip />
-        <div id="poem-menus" class="menus">
+        <div id="poem-menus" className="menus">
           <PoetMenu value={this.state.selectedPoet} poets={this.state.ctxt.poets} onChange={this.handleSelectPoet}/>
           <PoemMenu value={this.state.selectedPoem} options={this.state.poems} onChange={this.handleSelectPoem} />
           <NewPoemButton onClick={this.handleNewPoem} />
         </div>
-        <div id="scansion-menus" class="menus">
+        <div id="scansion-menus" className="menus">
           <ScansionMenu value={this.state.startingAlgorithm} scansions={this.state.ctxt.scansions} onChange={this.handleSelectScansion} />
           <RescanButton onClick={this.handleRescan}/>
         </div>
@@ -538,6 +568,8 @@ class Scansion extends React.Component {
           <div id="provided">
             <Poem title={this.state.ctxt.poem.title} poet={this.state.ctxt.poem.poet} poem={this.state.ctxt.poem.poem} loading={this.state.loading} />
             <AlgorithmAbout text={this.state.ctxt.scansions[this.state.startingAlgorithm].about_algorithm}/>
+            <OwnPoem text={this.state.input} onChange={this.handleText} />
+            <SubmitOwnPoem onClick={this.handleSubmitOwn} />
           </div>
         </div>
       </div>

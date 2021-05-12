@@ -70,9 +70,10 @@ $shadow: 1px 1px 5px black;
   }
   
   textarea {
-    width: 95%;
-    height: 40%;
+    width: 500px;
+    height: 200px;
     margin: 20px;
+    display: block;
   }
   body {
     background-color: $light;
@@ -125,7 +126,10 @@ $shadow: 1px 1px 5px black;
     padding: 3px;
     font-family: $monospace-font;
   }
-  
+  .stressed {
+    color: red;
+    font-weight: bold;
+  }
   .symbol:hover {
     background-color: $dark;
     color: $light;
@@ -180,19 +184,17 @@ $shadow: 1px 1px 5px black;
   pre {
     font-family: $serif-fonts;
   }
-
   .menus {
     display: flex;
     flex-wrap: wrap;
     margin: 10px;
 
-    label {
-      margin: 7px;
-    }
-
     button {
       padding: 5px;
     }
+  }
+  label {
+    margin: 7px;
   }
   #scanned-by {
     font-size: 13px;
@@ -209,6 +211,10 @@ $shadow: 1px 1px 5px black;
     margin: 10px;
     border: 10px solid $dark;
     box-shadow: $shadow;
+  }
+  #provided {
+    display: flex;
+    flex-direction: column;
   }
   @media only screen and (max-width: 600px) {
     #login, #register {
