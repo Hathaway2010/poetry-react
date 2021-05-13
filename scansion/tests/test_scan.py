@@ -65,16 +65,20 @@ class TestStats(TestCase):
         StressPattern.objects.create(word=Word.objects.get(word="home-bound"), stresses="u/", popularity=1)
         StressPattern.objects.create(word=Word.objects.get(word="every"), stresses="/uu", popularity=1)
         StressPattern.objects.create(word=Word.objects.get(word="every"), stresses="/u", popularity=10)
+    
+    # cleaning words has moved to scan.poem_stats
+    # these commented-out tests now fail but could be
+    # reinstatated if I change things back
+    
+    # def test_capitalization(self):
+    #     print(get_stats("the"))
+    #     self.assertEqual(get_stats("the"), get_stats("THE"))
 
-    def test_capitalization(self):
-        print(get_stats("the"))
-        self.assertEqual(get_stats("the"), get_stats("THE"))
+    # def test_punctuation1(self):
+    #     self.assertEqual(get_stats("sound;"), get_stats("sound"))
 
-    def test_punctuation1(self):
-        self.assertEqual(get_stats("sound;"), get_stats("sound"))
-
-    def test_punctuation_capitalization(self):
-        self.assertEqual(get_stats("Home-bound"), get_stats("home-bound"))
+    # def test_punctuation_capitalization(self):
+    #     self.assertEqual(get_stats("Home-bound"), get_stats("home-bound"))
 
     def test_unknown(self):
         self.assertEqual(get_stats("squirrel"), ["?", "?"])

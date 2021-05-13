@@ -58,7 +58,7 @@ def make_dict_p(poem):
     """make dict id-ing poem's words by line, word index"""
     p = clean_poem(poem)
     line_word_dict = {}
-    for i, line in enumerate(poem.splitlines()):
+    for i, line in enumerate(p.splitlines()):
         line_word_dict[i] = {}
         relevant_words = [word for word in line.split() if clean(word)]
         for j, word in enumerate(relevant_words):

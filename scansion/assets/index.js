@@ -500,13 +500,13 @@ class Scansion extends React.Component {
 
       });
     }
-    function submitScansion(cookie, submittedScansion, id, poem, diffs) {
+    function submitScansion(obj) {
       fetch('/', {method: 'PUT', body: JSON.stringify({
-        scansion: submittedScansion,
-        id: id,
-        poem: poem,
-        diffs: diffs
-      }), headers: { "X-CSRFToken": cookie },
+        scansion: obj.scansion,
+        id: obj.id,
+        poem: obj.poem,
+        diffs: obj.diffs
+      }), headers: { "X-CSRFToken": obj.cookie },
       })
     }
     
@@ -534,13 +534,22 @@ class Scansion extends React.Component {
       }
       const own = state.ownPoem;
       const [diffs, percentage] = compareScansion(best, state.currentScansion);
+      console.log(diffs);
       let score = scoreScansion(percentage);
       const au = isAuthenticated();
       const prom = isPromoted();
       makeCorrectAlert(au, prom, state.submitted, percentage, score, own);
       const csrftoken = getCookie()
       if (au && prom) {
-        submitScansion(csrftoken, state.currentScansion, diffs, state.ctxt.poem.id, state.ctxt.poem.poem);
+        console.log(`Poem id: ${state.ctxt.poem.id}`)
+        const toSubmit = {
+          "cookie": csrftoken,
+          "scansion": state.currentScansion,
+          "id": state.ctxt.poem.id,
+          "poem": state.ctxt.poem.poem,
+          "diffs": diffs
+        }
+        submitScansion(toSubmit);
       } else if (au && !state.submitted && !own) {
         submitScore(csrftoken, score);
       }

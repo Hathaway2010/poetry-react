@@ -10,6 +10,7 @@ client = Client()
 class TestIndexGet(TestCase):
     @classmethod
     def setUpTestData(cls):
+        Poet.objects.create(last_name="SHAKESPEARE")
         Poem.objects.create(poem="moon squirrel")
         Algorithm.objects.create(name="Simple Scan")
         Algorithm.objects.create(name="House Robber Scan", preferred=True)
@@ -41,9 +42,6 @@ class TestIndexGet(TestCase):
         self.assertEqual(response.context["algorithms"].count(), 2)
         self.assertEqual(len(response.context["scansions"]), 2)
 
-
-class TestIndexPost(TestCase):
-    pass
 
 class TestIndexPut(TestCase):
     pass

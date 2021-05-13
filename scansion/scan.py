@@ -25,14 +25,14 @@ def get_stats(word):
     Arguments
     ---------
     word : str
-        word for which stats need to be looked up
+        word whose stats are in question, cleaned with parse.clean()
 
     Returns
     -------
     values : list of floats
         stress ratio for each syllable of the word; 4 decimal places
         `?` if unknown
-    """    
+    """
     try:
         word_instance = Word.objects.get(word=word)
         s = StressPattern.objects.filter(word=word_instance)
@@ -326,12 +326,20 @@ def record(poem, scansion):
         w = Word.objects.filter(word=word)
         if w.exists():
             if w.count() > 1:
-                print("dupllicate word")    
+                print("duplicate word")    
             # see if any instances of the word have the user-inputted stress pattern
             s = StressPattern.objects.filter(word=w[0], stresses=scanned_words[i])
             if s.exists():
                 if s.count() > 1:
-                    print("duplicate stress patterns")
+                    print(f"{w[0]}: duplicate stress patterns")
+                    total_pop = sum(pattern.popularity for pattern in s)
+                    print(f"total popularity: {total_pop}")
+                    s[0].popularity = total_pop
+                    s[0].save()
+                    s_id = s[0].pk
+                    s.exclude(pk=s_id).delete()
+                    s = StressPattern.objects.filter(word=w[0], stresses=scanned_words[i])
+                    print(f"Dupes deleted, popularities added, count is now {s.count()}")
                 sp = s[0]
                 sp.popularity += 1
                 sp.save()

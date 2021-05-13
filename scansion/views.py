@@ -20,70 +20,75 @@ from . import parse
 ALGORITHMS = {"House Robber Scan": scan.house_robber_scan, "Original Scan": scan.original_scan, "Simple Scan": scan.simple_scan}
 
 def generate_context(poem, promoted):
-        # get algorithms
-        algorithms = Algorithm.objects.all().order_by("-preferred")
-        
-        # create scansion consisting entirely of "u" to pass to template for React
-        blank_slate_to_be = ALGORITHMS[algorithms[0].name](poem.poem)
-        almost_blank_slate = blank_slate_to_be.replace(parse.STRESSED, parse.UNSTRESSED)
-        blank_slate = almost_blank_slate.replace(parse.UNKNOWN, parse.UNSTRESSED)
-        scansions = {"Blank Slate" : {
-            "about-algorithm": "",
-            "scansion": parse.make_dict(blank_slate)
-          }
+    """generate context for React frontend"""
+    # get algorithms
+    algorithms = Algorithm.objects.all().order_by("-preferred")
+    
+    # create scansion consisting entirely of "u" to pass to template for React
+    blank_slate_to_be = ALGORITHMS[algorithms[0].name](poem.poem)
+    almost_blank_slate = blank_slate_to_be.replace(parse.STRESSED, parse.UNSTRESSED)
+    blank_slate = almost_blank_slate.replace(parse.UNKNOWN, parse.UNSTRESSED)
+    scansions = {"Blank Slate" : {
+        "about-algorithm": "",
+        "scansion": parse.make_dict(blank_slate)
         }
-        for algorithm in algorithms:
-            try:
-                s = MachineScansion.objects.get(poem=poem, algorithm=algorithm)
-            except MachineScansion.DoesNotExist:
-                new_scan = ALGORITHMS[algorithm.name](poem.poem)
-                s = MachineScansion(poem=poem, scansion=new_scan, algorithm=algorithm)
-                s.save()
-            scansions[algorithm.name] = {
-                    "about_algorithm": algorithm.about, 
-                    "scansion": parse.make_dict(s.scansion)
-            }
-        
-        pts = Poet.objects.all().order_by("last_name")
-        if promoted:
-            poets = [poet.last_name for poet in pts]
-        else:
-            poets = []
-            for poet in pts:
-                if Poem.objects.filter(poet=poet).exclude(scansion="").exists():
-                    poets.append(poet.last_name)
+    }
+    for algorithm in algorithms:
+        try:
+            s = MachineScansion.objects.get(poem=poem, algorithm=algorithm)
+        except MachineScansion.DoesNotExist:
+            new_scan = ALGORITHMS[algorithm.name](poem.poem)
+            s = MachineScansion(poem=poem, scansion=new_scan, algorithm=algorithm)
+            s.save()
+        scansions[algorithm.name] = {
+                "about_algorithm": algorithm.about, 
+                "scansion": parse.make_dict(s.scansion)
+        }
+    
+    pts = Poet.objects.all().order_by("last_name")
+    if promoted:
+        poets = [""] + [poet.last_name for poet in pts]
+    else:
+        poets = [""]
+        for poet in pts:
+            if Poem.objects.filter(poet=poet).exclude(scansion="").exists():
+                poets.append(poet.last_name)
 
-        if poem.title:
-            title = poem.title
-        else:
-            title = poem.first_line()
-
+    if poem.title:
+        title = poem.title
+    else:
+        title = poem.first_line()
+    
+    if poem.poet:
         ps = Poem.objects.filter(poet=poem.poet)
-        poems_dict = {"human_scanned": [], "computer_scanned": []}
-        for p in ps:
-            if p.title:
-                title = p.title
-            else:
-                title = p.first_line()
-            poem_info = [p.pk, title]
-            if p.scansion:
-                poems_dict["human_scanned"].append(poem_info)
-            else:
-                poems_dict["computer_scanned"].append(poem_info)
-                
-        return {
-            "poem": {
-                "id": poem.pk,
-                "title" : title,
-                "poem": poem.poem,
-                "poem_dict": parse.make_dict_p(poem.poem),
-                "authoritative": parse.make_dict(poem.scansion),
-                "poet": poem.poet.last_name
-            }, 
-            "scansions": scansions,
-            "poets": poets,
-            "poems": poems_dict
-        }
+        last_name = poem.poet.last_name
+    else:
+        ps = Poem.objects.filter(poet__isnull=True)
+        last_name = "Unknown"
+    poems_dict = {"human_scanned": [], "computer_scanned": []}
+    for p in ps:
+        if p.title:
+            t = p.title
+        else:
+            t = p.first_line()
+        poem_info = [p.pk, t]
+        if p.scansion:
+            poems_dict["human_scanned"].append(poem_info)
+        else:
+            poems_dict["computer_scanned"].append(poem_info)            
+    return {
+        "poem": {
+            "id": poem.pk,
+            "title" : title,
+            "poem": poem.poem,
+            "poem_dict": parse.make_dict_p(poem.poem),
+            "authoritative": parse.make_dict(poem.scansion),
+            "poet": last_name
+        }, 
+        "scansions": scansions,
+        "poets": poets,
+        "poems": poems_dict
+    }
 
 
 # Create your views here.
@@ -126,6 +131,7 @@ u u /u u /u
 
     if request.method == "PUT":
         data = json.loads(request.body)
+        print(data)
         # if the user has proven themselves, write their scansion to the database
         if request.user.is_authenticated and request.user.is_promoted():
             # update poem's scansion in the poem table and mark it human-scanned
