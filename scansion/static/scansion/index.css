@@ -1,39 +1,31 @@
-$serif-fonts: "IM Fell English", serif;
-$main-font: sans-serif; 
-$monospace-font: monospace;
-$light: #f4f0fc;
-$dark: #26154f;
-$darkest: black;
-$lightest: white;
-$shadow: 1px 1px 5px black;
-
 button {
   padding: 15px;
-  color: $darkest;
+  color: black;
   border: none;
-  background-color: $lightest;
-  box-shadow: $shadow;
+  background-color: white;
+  box-shadow: 1px 1px 5px black;
 }
 
 .pm {
   padding: 7px;
 }
+
 .tooltip {
   visibility: hidden;
   position: absolute;
   width: 120px;
   height: auto;
-  background-color: $dark;
-  color: $light;
+  background-color: #26154f;
+  color: #f4f0fc;
   font-size: 12px;
-  font-family: $main-font;
+  font-family: sans-serif;
   padding: 7px;
 }
 
 button:hover {
   font-weight: bold;
-  background-color: $dark;
-  color: $light;
+  background-color: #26154f;
+  color: #f4f0fc;
 }
 
 textarea {
@@ -42,6 +34,7 @@ textarea {
   margin: 20px;
   display: block;
 }
+
 .container {
   display: flex;
   justify-content: space-around;
@@ -50,11 +43,11 @@ textarea {
 
 table {
   padding: 10px;
-  font-family: $main-font;
+  font-family: sans-serif;
 }
 
 .empty {
-  background-color: $dark;
+  background-color: #26154f;
   width: 100%;
   margin-top: 10px;
   margin-bottom: 10px;
@@ -62,23 +55,25 @@ table {
 
 span {
   font-size: 20px;
-  font-family: $main-font;
+  font-family: sans-serif;
   text-align: center;
 }
+
 #original-poem {
   font-size: 20px;
-  background-color: $lightest;
-  box-shadow: $shadow;
+  background-color: white;
+  box-shadow: 1px 1px 5px black;
   padding: 30px;
   height: auto;
 }
+
 #id, .scansion-text {
   display: none;
 }
 
 #poem-to-scan {
-  border: 30px solid $dark;
-  box-shadow: 1px 1px 5px $darkest;
+  border: 30px solid #26154f;
+  box-shadow: 1px 1px 5px black;
 }
 
 td {
@@ -87,91 +82,107 @@ td {
 
 .symbol {
   padding: 3px;
-  font-family: $monospace-font;
+  font-family: monospace;
 }
+
 .stressed {
   color: red;
   font-weight: bold;
 }
+
 .symbol:hover {
-  background-color: $dark;
-  color: $light;
+  background-color: #26154f;
+  color: #f4f0fc;
   cursor: default;
 }
+
 #poem-id {
   display: none;
 }
+
 pre {
-  font-family: $serif-fonts;
+  font-family: "IM Fell English", serif;
 }
+
 .menus {
   display: flex;
   flex-wrap: wrap;
   margin: 10px;
-
-  button {
-    padding: 5px;
-  }
 }
+.menus button {
+  padding: 5px;
+}
+
 label {
   margin: 7px;
 }
+
 #scanned-by {
   font-size: 13px;
-  font-family: $serif-fonts;
+  font-family: "IM Fell English", serif;
 }
+
 #about-algorithm {
-  font-family: $main-font;
+  font-family: sans-serif;
   max-width: 500px;
   padding: 10px;
   margin: 10px;
-  border: 10px solid $dark;
-  box-shadow: $shadow;
+  border: 10px solid #26154f;
+  box-shadow: 1px 1px 5px black;
 }
+
 #provided {
   display: flex;
   flex-direction: column;
 }
+
 @media only screen and (max-width: 600px) {
   #original {
     width: 100%;
   }
+
   #original-poem {
     padding: 5px;
     width: 95%;
     font-size: 16px;
-    margin: 10px
+    margin: 10px;
   }
+
   table {
     width: 80%;
     margin: auto;
   }
+
   .scansion, .symbol, .pmc {
     display: none;
-    background-color: $light;
+    background-color: #f4f0fc;
   }
+
   .symbol {
     font-size: 20px;
     padding: 5px;
   }
 }
-
 @media only screen and (max-width: 400px) {
   .word {
     font-size: 13px;
   }
+
   .scansion {
-    background-color: $light;
+    background-color: #f4f0fc;
   }
+
   /* https://stackoverflow.com/questions/17159708/wrap-table-row-to-the-next-line */
   table {
     display: block;
     padding: 4px;
     width: 100%;
   }
+
   td {
     display: inline-block;
   }
+
   .autoline td {
     display: table-cell;
   }

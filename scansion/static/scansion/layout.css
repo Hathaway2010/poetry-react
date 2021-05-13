@@ -1,0 +1,103 @@
+#login, #register {
+  margin-left: 25%;
+}
+
+body {
+  font-family: "IM Fell English", serif;
+  background-color: #f4f0fc;
+}
+
+#username, #email, #password, #confirmation, #submit {
+  display: block;
+  width: 50%;
+  font-size: 20px;
+}
+
+#about {
+  font-family: "IM Fell English", serif;
+  width: 60%;
+  margin: auto;
+}
+#about p, #about li {
+  font-family: sans-serif;
+  font-size: 20px;
+}
+
+#small-screen {
+  display: none;
+}
+
+a {
+  color: black;
+  text-decoration: none;
+  font-family: sans-serif;
+}
+
+a:hover {
+  color: #26154f;
+  font-weight: bold;
+}
+
+#wide-screen {
+  background-color: black;
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  margin: -10px;
+  margin-bottom: 30px;
+  box-shadow: 1px 1px 5px black;
+}
+
+nav a {
+  color: #f4f0fc;
+  font-family: "IM Fell English", serif;
+  padding: 20px;
+}
+
+nav a:hover {
+  background-color: #26154f;
+  color: #f4f0fc;
+}
+
+nav span {
+  color: #f4f0fc;
+  background-color: #26154f;
+  font-family: sans-serif;
+  font-size: 16px;
+  padding: 20px;
+}
+
+@media only screen and (max-width: 600px) {
+  #login, #register {
+    margin: 2.5%;
+  }
+
+  #about {
+    width: 95%;
+  }
+
+  nav a, nav span {
+    padding: 5px;
+  }
+
+  #username, #email, #password, #confirmation, #submit {
+    width: 95%;
+  }
+}
+@media only screen and (max-width: 400px) {
+  #wide-screen {
+    display: none;
+  }
+
+  #small-screen {
+    display: block;
+    margin-bottom: 10px;
+    padding: 5px;
+    background-color: black;
+  }
+
+  #small-screen select {
+    width: 80%;
+  }
+}

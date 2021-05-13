@@ -1,9 +1,14 @@
 const path = require('path');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+
 
 module.exports = {
-  entry: './scansion/assets/index.js',  // path to our input file
+  entry: {
+    index: ['./scansion/assets/index.js', './scansion/assets/styles.scss'], 
+    layout: './scansion/assets/layout.scss',       
+  }, 
   output: {
-    filename: 'index-bundle.js',  // output bundle file name
+    filename: '[name].js',  // output bundle file name
     path: path.resolve(__dirname, './scansion/static/scansion'),  // path to our Django static directory
   },
   module: {
@@ -18,11 +23,17 @@ module.exports = {
         test:/\.scss$/,
         exclude: /node_modules/,
         use: [
-          "style-loader",
+          // fallback to style-loader in development
+          MiniCssExtractPlugin.loader,
           "css-loader",
           "sass-loader"
         ]
       }
     ]
   },
+  plugins: [
+    new MiniCssExtractPlugin({
+      filename: '[name].css',
+    }),
+  ],
 };

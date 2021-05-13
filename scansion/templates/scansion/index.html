@@ -1,6 +1,10 @@
 {% extends 'scansion/layout.html' %}
 {% load static %}
 
+{% block style %}
+    <link href="{% static 'scansion/layout.css' %}" rel="stylesheet">
+    <link href="{% static 'scansion/index.css' %}" rel="stylesheet">
+{% endblock %}
 {% block body %}
     <div>
         {% csrf_token %}
@@ -10,6 +14,6 @@
 {% endblock %}
 
 {% block script %}
-    <script src="{% static 'scansion/index-bundle.js' %}">
+    <script src="{% static 'scansion/index.js' %}">
     </script>
 {% endblock %}
