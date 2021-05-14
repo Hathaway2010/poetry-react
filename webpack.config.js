@@ -3,6 +3,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 
 module.exports = {
+  mode: 'production',
   entry: {
     index: ['./scansion/assets/index.js', './scansion/assets/styles.scss'], 
     layout: './scansion/assets/layout.scss',       

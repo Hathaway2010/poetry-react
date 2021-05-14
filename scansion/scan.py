@@ -318,7 +318,8 @@ def record(poem, scansion):
         scansion, words separated with spaces, lines with newlines
     """
     # split both poem and scansion on spaces
-    words = poem.split()
+    p = parse.clean_poem(poem)
+    words = p.split()
     cleaned_words = [parse.clean(word) for word in words]
     scanned_words = scansion.strip().split()
     # find each word in the database if it is there
