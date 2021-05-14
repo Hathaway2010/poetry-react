@@ -5,6 +5,7 @@ from django.urls import reverse
 from scansion.views import index, about, choose_poem, login, logout, register 
 from scansion.models import User, Word, StressPattern, Poet, Poem, Algorithm, HumanScansion, MachineScansion
 
+# This set of tests is incomplete and very outdated. I expect to update it and add to it soon.
 client = Client()
 
 class TestIndexGet(TestCase):

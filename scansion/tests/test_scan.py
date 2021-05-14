@@ -2,6 +2,7 @@ from django.test import TestCase
 from scansion.scan import get_stats, poem_stats, original_scan, house_robber_scan, simple_scan, record, syllables
 from scansion.models import Word, StressPattern
 
+# This set of tests is incomplete and outdated. I expect to update it and add to it soon.
 
 class TestStats(TestCase):
     @classmethod

@@ -2,6 +2,8 @@ from django.test import TestCase
 from scansion.parse import clean_poem, clean, syllable_counter, calculate_ratios, preliminary_syllable_count, adjustment_for_two_syll_clusters, silent_final_e, other_silent_e
 from scansion.models import Word, StressPattern
 
+# This set of tests may be incomplete. I expect to add to it soon.
+
 class TestCleanPoem(TestCase):
     def test_dashes_no_space(self):
         self.assertEqual(clean_poem("The--moon–is—a squirrel"), "The moon is a squirrel")

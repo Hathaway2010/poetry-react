@@ -1,7 +1,6 @@
 from django.test import TestCase
 from scansion.models import User, Word, StressPattern, Poet, Poem, Algorithm, HumanScansion, MachineScansion
 
-# Create your tests here.
 class TestUser(TestCase):
     @classmethod
     def setUpTestData(cls):
